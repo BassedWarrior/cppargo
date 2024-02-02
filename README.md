@@ -14,7 +14,7 @@ Installation can currently only be done using `cargo`, the Rust project manageme
 Using `gh` (GitHub's CLI Tool).
 
 ```
-gh repo clone BassedWarrior/ccppargo
+gh repo clone BassedWarrior/cppargo
 ```
 
 2. Compile and add to `$PATH` using `cargo` from inside the cloned repo.

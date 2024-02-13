@@ -5,6 +5,13 @@ use std::{
     path::Path,
 };
 
+/// Creates a new project file structure
+///
+/// Creates a directory with the project `name`, and inside it, two other 
+/// subdirectories. 
+///
+/// - A `src` directory with a `main.rs` sample "Hello World!" C++ program.
+/// - A `target` directory in which the compiled binaries are stored and run.
 fn new_project(name: &str) -> Result<(), &'static str> {
     let project_dir: &Path = Path::new(name);
     if project_dir.exists() {
@@ -41,6 +48,11 @@ fn new_project(name: &str) -> Result<(), &'static str> {
     Ok(())
 }
 
+/// Compiles all source files and stores binary
+///
+/// Iterates over the `src` directory in order to find all `.cpp` source files 
+/// and gives it to the `g++` compiler to store it in the `target` directory 
+/// with the project name.
 fn build_project() -> Result<(), &'static str> {
     let project_dir = match env::current_dir() {
         Ok(path) => path,
@@ -83,6 +95,10 @@ fn build_project() -> Result<(), &'static str> {
     Ok(())
 }
 
+/// Compile and run the project.
+///
+/// Call the `build_project()` function to compile the project, and then 
+/// excecutes the compiled binary stored in the `target` directory.
 fn run_project() -> Result<(), &'static str> {
     let project_dir = match env::current_dir() {
         Ok(path) => path,

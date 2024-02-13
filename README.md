@@ -3,6 +3,26 @@
 `cppargo` is a tool to mimic the basic functionalities of the `cargo` utility 
 for Rust projects but for C++ projects.
 
+## Installation
+
+### Using `cargo`
+
+Installation can currently only be done using `cargo`, the Rust project management tool this project aims to emulate.
+
+1. Clone the repo locally.
+
+Using `gh` (GitHub's CLI Tool).
+
+```
+gh repo clone BassedWarrior/cppargo
+```
+
+2. Compile and add to `$PATH` using `cargo` from inside the cloned repo.
+
+```
+cargo install --path .
+```
+
 ## Usage
 
 ### Create new project

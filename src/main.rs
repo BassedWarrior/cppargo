@@ -85,8 +85,13 @@ fn build_project() -> Result<(), &'static str> {
 
     match Command::new("g++").args(output_args).args(src_files).spawn() {
         Ok(mut compiler) => {
-            if compiler.wait().is_err() {
-                return Err("Compilation failed.")
+            match compiler.wait() {
+                Ok(exit_status) => {
+                    if !exit_status.success() {
+                        return Err("Compilation failed");
+                    }
+                },
+                Err(_) => return Err("Compiler couldn't run properly.")
             };
         },
         Err(_) => return Err("Couldn't start compiler.")

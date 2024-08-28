@@ -17,15 +17,15 @@ fn new_project(name: &str) -> Result<(), &'static str> {
     if project_dir.exists() {
         return Ok(())
     }
-    
+
     if fs::create_dir(project_dir).is_err() {
         return Err("Failed to create project directory.")
     };
-    
+
     if fs::create_dir(project_dir.join("src")).is_err() {
         return Err("Failed to create project source directory.")
     };
-    
+
     if fs::create_dir(project_dir.join("target")).is_err() {
         return Err("Failed to create project target directory.")
     };
@@ -73,7 +73,7 @@ fn build_project() -> Result<(), &'static str> {
         },
         Err(_) => return Err("Couldn't read source directory.")
     };
-    
+
     let project_name = match project_dir.file_name() {
         Some(name) => name,
         None => return Err("Couldn't get project name.")
@@ -96,7 +96,7 @@ fn build_project() -> Result<(), &'static str> {
         },
         Err(_) => return Err("Couldn't start compiler.")
     };
-    
+
     Ok(())
 }
 
@@ -109,7 +109,7 @@ fn run_project() -> Result<(), &'static str> {
         Ok(path) => path,
         Err(_) => return Err("Couldn't access project directory.")
     };
-    
+
     let project_target = project_dir.join("target");
 
     let project_name = match project_dir.file_name() {
@@ -118,7 +118,7 @@ fn run_project() -> Result<(), &'static str> {
     };
 
     let project_excecutable = project_target.join(project_name);
-    
+
     let _ = match Command::new(project_excecutable).spawn() {
         Ok(mut child) => child.wait(),
         Err(_) => return Err("Couldn't excecute project file.")

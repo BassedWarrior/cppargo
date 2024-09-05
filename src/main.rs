@@ -152,6 +152,7 @@ fn main() {
             Ok(_) => println!("Project built succesfully!"),
             Err(err) => {
                 eprintln!("{err}"); 
+                eprintln!("Cannot run project");
                 return
             },
         };

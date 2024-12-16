@@ -5,6 +5,11 @@ use std::{
     path::Path,
 };
 
+use anyhow::{
+    self,
+    Context,
+};
+
 /// Creates a new project file structure
 ///
 /// Creates a directory with the project `name`, and inside it, two other 
@@ -12,23 +17,20 @@ use std::{
 ///
 /// - A `src` directory with a `main.rs` sample "Hello World!" C++ program.
 /// - A `target` directory in which the compiled binaries are stored and run.
-fn new_project(name: &str) -> Result<(), &'static str> {
+fn new_project(name: &str) -> anyhow::Result<()> {
     let project_dir: &Path = Path::new(name);
     if project_dir.exists() {
         return Ok(())
     }
 
-    if fs::create_dir(project_dir).is_err() {
-        return Err("Failed to create project directory.")
-    };
+    fs::create_dir(project_dir)
+        .with_context(|| format!("Failed to create project directory."))?;
 
-    if fs::create_dir(project_dir.join("src")).is_err() {
-        return Err("Failed to create project source directory.")
-    };
+    fs::create_dir(project_dir.join("src"))
+		.with_context(|| format!("Failed to create project source directory."))?;
 
-    if fs::create_dir(project_dir.join("target")).is_err() {
-        return Err("Failed to create project target directory.")
-    };
+    fs::create_dir(project_dir.join("target"))
+		.with_context(|| format!("Failed to create project target directory."))?;
 
     let hello_world_program = concat!(
             "#include <iostream>\n",
@@ -39,11 +41,8 @@ fn new_project(name: &str) -> Result<(), &'static str> {
             "};"
         );
 
-    if fs::write(
-        project_dir.join("src").join("main.cpp"), hello_world_program
-    ).is_err() {
-        return Err("Failed to create project main.cpp file.")
-    };
+    fs::write( project_dir.join("src").join("main.cpp"), hello_world_program)
+		.with_context(|| format!("Failed to create project `main.cpp` file."))?;
 
     Ok(())
 }
@@ -53,16 +52,14 @@ fn new_project(name: &str) -> Result<(), &'static str> {
 /// Iterates over the `src` directory in order to find all `.cpp` source files 
 /// and gives it to the `g++` compiler to store it in the `target` directory 
 /// with the project name.
-fn build_project() -> Result<(), &'static str> {
-    let project_dir = match env::current_dir() {
-        Ok(path) => path,
-        Err(_) => return Err("Couldn't get project directory.")
-    };
+fn build_project() -> anyhow::Result<()> {
+    let project_dir = env::current_dir()
+        .with_context(|| format!("Couldn't get project directory."))?;
     let project_src = project_dir.join("src");
     let project_target = project_dir.join("target");
 
     if ! (project_src.exists() && project_target.exists()) {
-        return Err("No src and target directories.")
+        anyhow::bail!("No src and target directories.");
     };
 
     let src_files = match fs::read_dir(project_src) {
@@ -71,12 +68,12 @@ fn build_project() -> Result<(), &'static str> {
                 .map(|f| f.path())
                 .filter(|f| f.extension().unwrap() == "cpp")
         },
-        Err(_) => return Err("Couldn't read source directory.")
+        Err(_) => anyhow::bail!("Couldn't read source directory.")
     };
 
     let project_name = match project_dir.file_name() {
         Some(name) => name,
-        None => return Err("Couldn't get project name.")
+        None => anyhow::bail!("Couldn't get project name.")
     };
 
     let output_file = project_target.join(project_name);
@@ -88,13 +85,13 @@ fn build_project() -> Result<(), &'static str> {
             match compiler.wait() {
                 Ok(exit_status) => {
                     if !exit_status.success() {
-                        return Err("Compilation failed");
+                        anyhow::bail!("Compilation failed");
                     }
                 },
-                Err(_) => return Err("Compiler couldn't run properly.")
+                Err(_) => anyhow::bail!("Compiler couldn't run properly.")
             };
         },
-        Err(_) => return Err("Couldn't start compiler.")
+        Err(_) => anyhow::bail!("Couldn't start compiler.")
     };
 
     Ok(())
@@ -104,30 +101,30 @@ fn build_project() -> Result<(), &'static str> {
 ///
 /// Call the `build_project()` function to compile the project, and then 
 /// excecutes the compiled binary stored in the `target` directory.
-fn run_project() -> Result<(), &'static str> {
+fn run_project() -> anyhow::Result<()> {
     let project_dir = match env::current_dir() {
         Ok(path) => path,
-        Err(_) => return Err("Couldn't access project directory.")
+        Err(_) => anyhow::bail!("Couldn't access project directory.")
     };
 
     let project_target = project_dir.join("target");
 
     let project_name = match project_dir.file_name() {
         Some(name) => name,
-        None => return Err("Couldn't get project name.")
+        None => anyhow::bail!("Couldn't get project name.")
     };
 
     let project_excecutable = project_target.join(project_name);
 
     let _ = match Command::new(project_excecutable).spawn() {
         Ok(mut child) => child.wait(),
-        Err(_) => return Err("Couldn't excecute project file.")
+        Err(_) => anyhow::bail!("Couldn't excecute project file.")
     };
 
     Ok(())
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let mut args = env::args();
     args.next();  // Discard excecutable name
 
@@ -138,13 +135,13 @@ fn main() {
         println!("Creating new project {project_name}...");
         match new_project(&project_name) {
             Ok(_) => println!("Project {project_name} created succesfully!"),
-            Err(err) => eprintln!("{err}")
+            Err(err) => anyhow::bail!("{err}")
         };
     } else if command == "build" {
         println!("Building project...");
         match build_project() {
             Ok(_) => println!("Project built succesfully!"),
-            Err(err) => eprintln!("{err}")
+            Err(err) => anyhow::bail!("{err}")
         };
     } else if command == "run" {
         println!("Building project...");
@@ -152,15 +149,16 @@ fn main() {
             Ok(_) => println!("Project built succesfully!"),
             Err(err) => {
                 eprintln!("{err}"); 
-                eprintln!("Cannot run project");
-                return
+                anyhow::bail!("Cannot run project");
             },
         };
         println!("Running project...");
         if let Err(err) = run_project() {
-            eprintln!("{err}");
+            anyhow::bail!("{err}");
         };
     } else {
-        eprintln!("Invalid command provided.");
+        anyhow::bail!("Invalid command provided.");
     };
+
+    Ok(())
 }

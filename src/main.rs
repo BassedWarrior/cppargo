@@ -1,14 +1,38 @@
 use std::{env, fs, path::Path, process::Command};
 
+use clap::{Parser, Subcommand};
+
 use anyhow::{self, Context};
 
-/// Creates a new project file structure
-///
-/// Creates a directory with the project `name`, and inside it, two other
-/// subdirectories.
-///
-/// - A `src` directory with a `main.rs` sample "Hello World!" C++ program.
-/// - A `target` directory in which the compiled binaries are stored and run.
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+#[command(propagate_version = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Creates a new cppargo project at <path>
+    ///
+    /// This command will create a new cppargo project in the given directory.
+    /// This includes a sample source file "Hello World!" program
+    /// (`src/main.cpp`).
+    New { path: String },
+    /// Compile a local project.
+    ///
+    /// Iterates over the `src` directory in order to find all `.cpp` source files
+    /// and gives it to the `g++` compiler to store it in the `target` directory
+    /// with the project name.
+    Build,
+    /// Run a binary of the local project.
+    ///
+    /// Compile the project, and then excecute the compiled binary stored in
+    /// the `target` directory.
+    Run,
+}
+
 fn new_project(name: &str) -> anyhow::Result<()> {
     let project_dir: &Path = Path::new(name);
 
@@ -43,11 +67,6 @@ fn new_project(name: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Compiles all source files and stores binary
-///
-/// Iterates over the `src` directory in order to find all `.cpp` source files
-/// and gives it to the `g++` compiler to store it in the `target` directory
-/// with the project name.
 fn build_project() -> anyhow::Result<()> {
     let project_dir = env::current_dir().with_context(|| "Couldn't get project directory.")?;
     let project_src = project_dir.join("src");
@@ -97,10 +116,6 @@ fn build_project() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Compile and run the project.
-///
-/// Call the `build_project()` function to compile the project, and then
-/// excecutes the compiled binary stored in the `target` directory.
 fn run_project() -> anyhow::Result<()> {
     let project_dir = env::current_dir().with_context(|| "Couldn't access project directory.")?;
 
@@ -133,29 +148,27 @@ fn run_project() -> anyhow::Result<()> {
 }
 
 fn main() -> anyhow::Result<()> {
-    let mut args = env::args();
-    args.next(); // Discard excecutable name
+    let cli = Cli::parse();
 
-    let command = args.next().with_context(|| "No command provided.")?;
-
-    if command == "new" {
-        let project_name = args.next().expect("No project name provided.");
-        println!("Creating new project {project_name}...");
-        new_project(&project_name)
-            .with_context(|| format!("Failed to create project {}", &project_name))?;
-        println!("Project {project_name} created succesfully!");
-    } else if command == "build" {
-        println!("Building project...");
-        build_project().with_context(|| "Failed to build project.")?;
-        println!("Project built succesfully!");
-    } else if command == "run" {
-        println!("Building project...");
-        build_project().with_context(|| "Failed to build project before attempting to run it.")?;
-        println!("Project built succesfully!");
-        println!("Running project...");
-        run_project().with_context(|| "Failed to run project")?;
-    } else {
-        anyhow::bail!("Invalid command provided.");
+    match cli.command {
+        Commands::New { path } => {
+            println!("Creating new project {path}...");
+            new_project(&path).with_context(|| format!("Failed to create project {}", &path))?;
+            println!("Project {path} created succesfully!");
+        }
+        Commands::Build => {
+            println!("Building project...");
+            build_project().with_context(|| "Failed to build project.")?;
+            println!("Project built succesfully!");
+        }
+        Commands::Run => {
+            println!("Building project...");
+            build_project()
+                .with_context(|| "Failed to build project before attempting to run it.")?;
+            println!("Project built succesfully!");
+            println!("Running project...");
+            run_project().with_context(|| "Failed to run project")?;
+        }
     };
 
     Ok(())

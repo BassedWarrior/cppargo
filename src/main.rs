@@ -1,4 +1,8 @@
-use std::{env, fs, path::Path, process::Command};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use clap::{Parser, Subcommand};
 
@@ -84,11 +88,20 @@ fn build_project() -> anyhow::Result<()> {
         )
     );
 
-    let src_files = fs::read_dir(&project_src)
+    let src_files: Vec<PathBuf> = fs::read_dir(&project_src)
         .with_context(|| format!("Couldn't read source directory {}.", &project_src.display()))?
         .filter_map(|f| f.ok())
         .map(|f| f.path())
-        .filter(|f| f.extension().unwrap() == "cpp");
+        .filter(|f| f.extension().unwrap() == "cpp")
+        .collect();
+
+    anyhow::ensure!(
+        !src_files.is_empty(),
+        format!(
+            "No source `.cpp` files to compile found in \"{}\" directory.",
+            &project_src.display()
+        )
+    );
 
     let project_name = match project_dir.file_name() {
         Some(name) => name,

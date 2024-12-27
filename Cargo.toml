@@ -1,11 +1,18 @@
 [package]
 name = "cppargo"
-version = "0.1.1"
-edition = "2021"
+version = "0.2.0"
+authors = ["BassedWarrior"]
+license = "GPL-3.0"
 description = """
 Minimal Rust `cargo` clone for creation, compilation and excecution of basic \
 C++ projects.\
 """
+readme = "README.md"
+homepage = "https://github.com/BassedWarrior/cppargo"
+repository = "https://github.com/BassedWarrior/cppargo"
+keywords = ["CLI", "C++", "cargo-like"]
+categories = ["command-line-utilities"]
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

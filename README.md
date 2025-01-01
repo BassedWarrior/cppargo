@@ -7,19 +7,41 @@ for Rust projects but for C++ projects.
 
 ### Using `cargo`
 
-Installation can currently only be done using `cargo`, the Rust project management tool this project aims to emulate.
+Installation can currently only be done using `cargo`, the Rust project
+management tool this project aims to emulate. If you haven't already installled
+Rust, follow the [installation instructions](https://www.rust-lang.org/tools/install) from their website on how to
+install utilizing `rustup`.
+
+#### From [`crates.io`](https://www.crates.io)
+
+```sh
+cargo install cppargo
+```
+
+#### Directly from repo
+
+```sh
+cargo install --git https://www.github.com/bassedwarrior/cppargo
+```
+
+#### Building
 
 1. Clone the repo locally.
 
-Using `gh` (GitHub's CLI Tool).
+    - Using `gh` (GitHub's CLI Tool).
 
-```
-gh repo clone BassedWarrior/cppargo
-```
+    ```sh
+    gh repo clone BassedWarrior/cppargo
+    ```
+    - Using `git`
 
-2. Compile and add to `$PATH` using `cargo` from inside the cloned repo.
+    ```sh
+    git clone https://www.github.com/bassedwarrior/cppargo
+    ```
 
-```
+2. From inside the cloned repo, compile the binary.
+
+```sh
 cargo install --path .
 ```
 

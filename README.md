@@ -3,6 +3,39 @@
 `cppargo` is a tool to mimic the basic functionalities of the `cargo` utility 
 for Rust projects but for C++ projects.
 
+## Dependencies
+
+Currently, `cppargo` is hard-coded to use `g++` as the compiler for the `C++`
+projects it manages. So ensure that you have it installed. Most Unix systems
+have it already installed. [Installation instructions](https://gcc.gnu.org/install/) for `g++` can be found
+on the website, or with your system's package manager. `g++` is not required
+to install `cppargo`, but it is currently indispensible to compile `C++`
+projects.
+
+### Fedora Linux
+
+```sh
+sudo dnf install gcc-c++
+```
+
+### Ubuntu Linux
+
+```sh
+sudo apt install gcc
+```
+
+### Arch Linux
+
+```sh
+sudo pacman -S gcc
+```
+
+### Brew
+
+```sh
+brew install gcc
+```
+
 ## Installation
 
 ### Using `cargo`

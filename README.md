@@ -84,40 +84,45 @@ cargo install --path .
 
 In order to create a new project, use the command
 
-```
-cppargo new {project_name}
+```sh
+cppargo new <PATH>
 ```
 
-This will create a new directory `project_name` in the current working 
-directory. 
+This will create a new directory `PATH` in the current working directory. 
 
-Inside of which it will also create a `src` with a mock `project_name.cpp` 
+Inside of which it will also create a `src` directory with a mock `main.cpp` 
 hello world program. This is the directory where all of the source files for 
-the project.
+the project should be included. Currently, `cppargo` doesn't support any
+sub-directories inside the `src` directory for the source `.cpp` files.
 
-It will also create a `target` directory where the excecutable files are to 
-be stored and run from.
+It will also create a `target` directory where the compiled excecutable files
+are to be stored.
 
 ### Build projects
 
-In order to build a project, use the command
+From inside the project root directory created by the `cppargo new <PATH>`
+command, in order to build a project, use the command
 
-```
+```sh
 cppargo build
 ```
 
 Make sure to run this command within the project directory. As it will look 
 for the `src` directory to compile all of the `.cpp` files insde it using `g++`
-to create the `project_name` file within the `target` directory.
+to create the compiled excecutable file within the `target` directory. The
+excecutable file's name is currently determined by the name `PATH` of the
+project root directory created by the command `cppargo new <PATH>`.
 
 ### Run projects
 
-In order to run a project, use the command
+From inside the project root directory created by the `cppargo new <PATH>`
+command, in order to run a project, use the command
 
-```
+```sh
 cppargo run
 ```
 
 Within the project directory. This will first perform a `cppargo build` and 
-then run the `target/project_name` file generated after a successful 
-compilation.
+then run the `target/PATH` file generated after a successful compilation. The
+proper working directory for the excecutable will be the project root directory
+created by the `cppargo new <PATH>` command.

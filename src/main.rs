@@ -1,13 +1,11 @@
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{env, fs, path::PathBuf, process::Command};
 
 use anyhow::{self, Context};
 
 mod cli;
 use cli::{Cli, Commands, Parser};
+
+mod new;
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -15,7 +13,8 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::New { path } => {
             println!("Creating new project {path}...");
-            crate::new_project(&path).with_context(|| format!("Failed to create project {}", &path))?;
+            new::new_project(&path)
+                .with_context(|| format!("Failed to create project {}", &path))?;
             println!("Project {path} created succesfully!");
         }
         Commands::Build => {
@@ -32,40 +31,6 @@ fn main() -> anyhow::Result<()> {
             run_project().with_context(|| "Failed to run project")?;
         }
     };
-
-    Ok(())
-}
-
-fn new_project(name: &str) -> anyhow::Result<()> {
-    let project_dir: &Path = Path::new(name);
-
-    fs::create_dir(project_dir).with_context(|| {
-        format!(
-            "Failed to create project directory {}.",
-            project_dir.display()
-        )
-    })?;
-
-    fs::create_dir(project_dir.join("src"))
-        .with_context(|| "Failed to create project source directory.")?;
-
-    fs::create_dir(project_dir.join("target"))
-        .with_context(|| "Failed to create project target directory.")?;
-
-    let hello_world_program = concat!(
-        "#include <iostream>\n",
-        "\n",
-        "int main() {\n",
-        "    std::cout << \"Hello World!\\n\";\n",
-        "    return 0;\n",
-        "};"
-    );
-
-    fs::write(
-        project_dir.join("src").join("main.cpp"),
-        hello_world_program,
-    )
-    .with_context(|| "Failed to create project `main.cpp` file.")?;
 
     Ok(())
 }

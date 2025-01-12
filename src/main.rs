@@ -1,4 +1,5 @@
 use anyhow::{self, Context};
+use std::env;
 
 mod cli;
 use cli::{Cli, Commands, Parser};
@@ -13,7 +14,7 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::New { path } => {
             println!("Creating new project {path}...");
-            new::new_project(&path)
+            new::new_project(&env::current_dir().unwrap(), &path)
                 .with_context(|| format!("Failed to create project {}", &path))?;
             println!("Project {path} created succesfully!");
         }

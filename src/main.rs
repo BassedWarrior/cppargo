@@ -30,7 +30,7 @@ fn main() -> anyhow::Result<()> {
                 .with_context(|| "Failed to build project before attempting to run it.")?;
             println!("Project built succesfully!");
             println!("Running project...");
-            run::run_project().with_context(|| "Failed to run project")?;
+            run::run_project(&env::current_dir()?).with_context(|| "Failed to run project")?;
         }
     };
 

@@ -20,12 +20,13 @@ fn main() -> anyhow::Result<()> {
         }
         Commands::Build => {
             println!("Building project...");
-            build::build_project().with_context(|| "Failed to build project.")?;
+            build::build_project(&env::current_dir()?)
+                .with_context(|| "Failed to build project.")?;
             println!("Project built succesfully!");
         }
         Commands::Run => {
             println!("Building project...");
-            build::build_project()
+            build::build_project(&env::current_dir()?)
                 .with_context(|| "Failed to build project before attempting to run it.")?;
             println!("Project built succesfully!");
             println!("Running project...");

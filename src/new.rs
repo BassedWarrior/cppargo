@@ -52,7 +52,7 @@ fn create_hello_world(project_src: &Path) -> anyhow::Result<()> {
         "    std::cout << \"Hello World!\\n\";\n",
         "\n",
         "    return 0;\n",
-        "}"
+        "}\n"
     );
 
     fs::write(project_src.join("main.cpp"), hello_world_program).with_context(|| {

@@ -8,7 +8,7 @@ use std::{
 
 pub fn build_project(project_dir: &Path) -> anyhow::Result<()> {
     let (project_src, project_target) =
-        find_project_dirs(project_dir).with_context(|| "Failed to get project directories!")?;
+        find_project_dirs(project_dir).with_context(|| "Not at cppargo project root!")?;
 
     let src_files = find_src_files(&project_src).with_context(|| {
         format!(

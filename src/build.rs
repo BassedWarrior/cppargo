@@ -122,22 +122,56 @@ mod tests {
 
     #[test]
     fn proper_find_src_files() -> anyhow::Result<()> {
-        let project_root = assert_fs::TempDir::new()?;
-        let project_src = project_root.child("src");
+        let tmp_dir = assert_fs::TempDir::new()?;
+        let project_src = tmp_dir.child("src");
+
+        // Indispensable main project file.
         let main_file = project_src.child("main.cpp");
-        let module_file = project_src.child("module.cpp");
         main_file.touch()?;
+
+        // Same-level module files files.
+        let module_header_file = project_src.child("module.hpp");
+        module_header_file.touch()?;
+        let module_file = project_src.child("module.cpp");
         module_file.touch()?;
+
+        // An empty subdirectory.
+        let empty_subdir = project_src.child("empty");
+        empty_subdir.create_dir_all()?;
+
+        // A subdirectory with both `.cpp` and `.hpp` files.
+        let header_and_code_subdir = project_src.child("header_and_code");
+        let header_and_code_header = header_and_code_subdir.child("foo.hpp");
+        header_and_code_header.touch()?;
+        let header_and_code_code = header_and_code_subdir.child("foo.cpp");
+        header_and_code_code.touch()?;
+
+        // A subdirectory with only `.hpp` files.
+        let header_subdir = project_src.child("header");
+        let header_header = header_subdir.child("bar.hpp");
+        header_header.touch()?;
+
+        // A doubly nested subdirectory to ensure recursivity.
+        let double_nested_code_subdir = project_src.child("double").child("nested");
+        let double_nested_file = double_nested_code_subdir.child("nested.cpp");
+        double_nested_file.touch()?;
+
         let found_src_files = find_src_files(&project_src)?;
+        let expected_src_files = HashSet::from(
+            [
+                main_file,
+                module_file,
+                header_and_code_code,
+                double_nested_file,
+            ]
+            .map(|f| f.to_path_buf()),
+        );
 
         anyhow::ensure!(
-            found_src_files.len() == 2
-                && found_src_files.contains(&main_file.to_path_buf())
-                && found_src_files.contains(&module_file.to_path_buf()),
+            found_src_files == expected_src_files,
             format!(
                 "Failed to gather all source files!\nExpected: {:?}.\nGot: {:?}",
-                vec!(main_file.path(), module_file.path()),
-                found_src_files
+                expected_src_files, found_src_files
             )
         );
 

@@ -13,10 +13,10 @@ fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Commands::New { path } => {
-            println!("Creating new project {path}...");
-            new::new_project(&env::current_dir().unwrap(), &path)
-                .with_context(|| format!("Failed to create project {}", &path))?;
-            println!("Project {path} created successfully!");
+            println!("Creating new project {}...", path.display());
+            new::new_project(&path)
+                .with_context(|| format!("Failed to create project {}", &path.display()))?;
+            println!("Project {} created successfully!", path.display());
         }
         Commands::Build => {
             println!("Building project...");

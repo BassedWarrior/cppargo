@@ -1,5 +1,7 @@
 pub use clap::{Parser, Subcommand};
 
+use std::path::PathBuf;
+
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
@@ -16,7 +18,7 @@ pub enum Commands {
     /// This includes a sample source file "Hello World!" program
     /// (`src/main.cpp`).
     #[command(visible_alias = "n")]
-    New { path: String },
+    New { path: PathBuf },
     /// Compile a local project.
     ///
     /// Iterates over the `src` directory in order to find all `.cpp` source files

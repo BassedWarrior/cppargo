@@ -1,5 +1,6 @@
 use crate::Context;
 use std::{
+    collections::HashSet,
     ffi::OsStr,
     fs,
     path::{Path, PathBuf},
@@ -46,12 +47,18 @@ fn find_project_dirs(project_dir: &Path) -> anyhow::Result<(PathBuf, PathBuf)> {
     Ok((project_src, project_target))
 }
 
-fn find_src_files(project_src: &Path) -> anyhow::Result<Vec<PathBuf>> {
-    let src_files: Vec<PathBuf> = fs::read_dir(project_src)
+fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
+    let src_files: HashSet<PathBuf> = fs::read_dir(project_src)
         .with_context(|| format!("Couldn't read source directory {}.", &project_src.display()))?
-        .filter_map(|f| f.ok())
-        .map(|f| f.path())
-        .filter(|f| f.extension().unwrap() == "cpp")
+        .filter_map(|f| Some(f.ok()?.path()))
+        .filter(|f| f.is_dir() || f.extension().is_some_and(|ext| ext == "cpp"))
+        .flat_map(|f| {
+            if f.is_dir() {
+                find_src_files(&f).unwrap_or_default()
+            } else {
+                HashSet::from([f])
+            }
+        })
         .collect();
 
     anyhow::ensure!(
@@ -66,7 +73,7 @@ fn find_src_files(project_src: &Path) -> anyhow::Result<Vec<PathBuf>> {
 }
 
 fn build_src_files(
-    src_files: Vec<PathBuf>,
+    src_files: HashSet<PathBuf>,
     project_target: PathBuf,
     project_name: &OsStr,
 ) -> anyhow::Result<()> {

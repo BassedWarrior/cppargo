@@ -18,15 +18,14 @@ pub fn build_project(project_dir: &Path) -> anyhow::Result<()> {
         )
     })?;
 
-    let project_name = match project_dir.file_name() {
-        Some(name) => name,
-        None => anyhow::bail!(format!(
+    let Some(project_name) = project_dir.file_name() else {
+        anyhow::bail!(format!(
             "Couldn't get project name from {}.",
             project_dir.display()
-        )),
+        ))
     };
 
-    build_src_files(src_files, project_target, project_name)
+    build_src_files(src_files, &project_target, project_name)
         .with_context(|| "Failed to build source files!")?;
     Ok(())
 }
@@ -74,7 +73,7 @@ fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
 
 fn build_src_files(
     src_files: HashSet<PathBuf>,
-    project_target: PathBuf,
+    project_target: &Path,
     project_name: &OsStr,
 ) -> anyhow::Result<()> {
     let output_file = project_target.join(project_name);
@@ -91,7 +90,7 @@ fn build_src_files(
     println!("Running compiler...\n{:?}", &compiler);
     let compiler_status = compiler
         .status()
-        .with_context(|| format!("Couldn't start compiler: {:?}", compiler))?;
+        .with_context(|| format!("Couldn't start compiler: {compiler:?}"))?;
 
     anyhow::ensure!(compiler_status.success(), "Compilation failed!");
 
@@ -212,7 +211,7 @@ mod tests {
 
         let src_files = HashSet::from([main_file.to_path_buf()]);
         let project_name = project_root.file_name().unwrap();
-        build_src_files(src_files, project_target.to_path_buf(), project_name)?;
+        build_src_files(src_files, project_target.path(), project_name)?;
         project_target
             .child(project_name)
             .assert(predicates::path::is_file());

@@ -5,57 +5,61 @@ use std::{
 
 use crate::Context;
 
-pub fn new_project(project_root: &Path, name: &str) -> anyhow::Result<()> {
-    let project_dir: PathBuf = create_project_fs(project_root, name)
-        .with_context(|| "Failed to create project file structure")?;
+const HELLO_WORLD_PROGRAM: &str = concat!(
+    "#include <iostream>\n",
+    "\n",
+    "int main() {\n",
+    "    std::cout << \"Hello World!\\n\";\n",
+    "\n",
+    "    return 0;\n",
+    "}\n"
+);
 
-    create_hello_world(&project_dir.join("src"))
+pub fn new_project(path: &Path) -> anyhow::Result<()> {
+    let project_root: PathBuf =
+        create_project_fs(path).with_context(|| "Failed to create project file structure")?;
+
+    create_hello_world(&project_root.join("src"))
         .with_context(|| "Failed to create simple 'Hello World!' program.")?;
 
     Ok(())
 }
 
-fn create_project_fs(project_root: &Path, name: &str) -> anyhow::Result<PathBuf> {
+fn create_project_fs(project_root: &Path) -> anyhow::Result<PathBuf> {
+    anyhow::ensure!(
+        !project_root.exists(),
+        format!("Path {} already exists!", project_root.display())
+    );
+
     // Create project root directory.
-    let project_dir = project_root.join(name);
-    fs::create_dir(&project_dir).with_context(|| {
+    fs::create_dir_all(project_root).with_context(|| {
         format!(
-            "Failed to create project directory {}.",
-            project_dir.display()
+            "Failed to create project directory at {}.",
+            project_root.display()
         )
     })?;
 
     // Create `source` directory where all `.cpp` files should be.
-    fs::create_dir(project_dir.join("src")).with_context(|| {
+    fs::create_dir(project_root.join("src")).with_context(|| {
         format!(
             "Failed to create project source directory {}.",
-            project_dir.join("src").display()
+            project_root.join("src").display()
         )
     })?;
 
     // Create `target` directory where all binary files should be.
-    fs::create_dir(project_dir.join("target")).with_context(|| {
+    fs::create_dir(project_root.join("target")).with_context(|| {
         format!(
             "Failed to create project target directory {}.",
-            project_dir.join("target").display()
+            project_root.join("target").display()
         )
     })?;
 
-    Ok(project_dir)
+    Ok(project_root.to_path_buf())
 }
 
 fn create_hello_world(project_src: &Path) -> anyhow::Result<()> {
-    let hello_world_program = concat!(
-        "#include <iostream>\n",
-        "\n",
-        "int main() {\n",
-        "    std::cout << \"Hello World!\\n\";\n",
-        "\n",
-        "    return 0;\n",
-        "}\n"
-    );
-
-    fs::write(project_src.join("main.cpp"), hello_world_program).with_context(|| {
+    fs::write(project_src.join("main.cpp"), HELLO_WORLD_PROGRAM).with_context(|| {
         format!(
             "Failed to create project `{}` file.",
             project_src.join("main.cpp").display()

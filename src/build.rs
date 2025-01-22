@@ -206,7 +206,7 @@ mod tests {
             "}\n"
         ))?;
 
-        let src_files = vec![main_file.to_path_buf()];
+        let src_files = HashSet::from([main_file.to_path_buf()]);
         let project_name = project_root.file_name().unwrap();
         build_src_files(src_files, project_target.to_path_buf(), project_name)?;
         project_target

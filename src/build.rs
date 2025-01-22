@@ -103,6 +103,26 @@ mod tests {
     use super::*;
     use assert_fs::prelude::*;
 
+    const MAIN_FILE_WITH_INCLUDE_MODULE: &str = concat!(
+        "#include <iostream>\n",
+        "#include \"module.hpp\"\n",
+        "\n",
+        "int main() {\n",
+        "    std::cout << \"Hello World!\\n\";\n",
+        "    hello_module();\n",
+        "\n",
+        "    return 0;\n",
+        "}\n"
+    );
+
+    const MODULE_FILE: &str = concat!(
+        "#include <iostream>\n",
+        "\n",
+        "void hello_module() {\n",
+        "    std::cout << \"Hello Module!\\n\";\n",
+        "}\n"
+    );
+
     #[test]
     fn proper_find_dirs() -> anyhow::Result<()> {
         let project_root = assert_fs::TempDir::new()?;
@@ -186,25 +206,9 @@ mod tests {
         project_target.create_dir_all()?;
 
         let main_file = project_src.child("main.cpp");
+        main_file.write_str(MAIN_FILE_WITH_INCLUDE_MODULE)?;
         let module_file = project_src.child("module.hpp");
-        main_file.write_str(concat!(
-            "#include <iostream>\n",
-            "#include \"module.hpp\"\n",
-            "\n",
-            "int main() {\n",
-            "    std::cout << \"Hello World!\\n\";\n",
-            "    hello_module();\n",
-            "\n",
-            "    return 0;\n",
-            "}\n"
-        ))?;
-        module_file.write_str(concat!(
-            "#include <iostream>\n",
-            "\n",
-            "void hello_module() {\n",
-            "    std::cout << \"Hello Module!\\n\";\n",
-            "}\n"
-        ))?;
+        module_file.write_str(MODULE_FILE)?;
 
         let src_files = HashSet::from([main_file.to_path_buf()]);
         let project_name = project_root.file_name().unwrap();
@@ -224,25 +228,9 @@ mod tests {
         project_target.create_dir_all()?;
 
         let main_file = project_src.child("main.cpp");
+        main_file.write_str(MAIN_FILE_WITH_INCLUDE_MODULE)?;
         let module_file = project_src.child("module.hpp");
-        main_file.write_str(concat!(
-            "#include <iostream>\n",
-            "#include \"module.hpp\"\n",
-            "\n",
-            "int main() {\n",
-            "    std::cout << \"Hello World!\\n\";\n",
-            "    hello_module();\n",
-            "\n",
-            "    return 0;\n",
-            "}\n"
-        ))?;
-        module_file.write_str(concat!(
-            "#include <iostream>\n",
-            "\n",
-            "void hello_module() {\n",
-            "    std::cout << \"Hello Module!\\n\";\n",
-            "}\n"
-        ))?;
+        module_file.write_str(MODULE_FILE)?;
 
         build_project(&project_root)?;
         let project_name = project_root.file_name().unwrap();

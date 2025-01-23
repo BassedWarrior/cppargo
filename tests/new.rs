@@ -1,14 +1,19 @@
 use predicates::str::{ContainsPredicate, EndsWithPredicate};
-use std::path::Path;
+use std::{ops::Deref, path::Path};
 
 mod common;
 use common::*;
 
 fn ensure_project_created_successfully<T>(project_root: T)
 where
-    T: PathChild + PathAssert,
+    T: PathChild + PathAssert + Deref<Target = Path>,
 {
     project_root.assert(predicates::path::is_dir());
+    let project_manifest = project_root.child("Cppargo.toml");
+    project_manifest.assert(format!(
+        "[project]\nname = \"{}\"\n",
+        project_root.file_name().unwrap().to_str().unwrap()
+    ));
     let project_src = project_root.child("src");
     project_src.assert(predicates::path::is_dir());
     let project_target = project_root.child("target");

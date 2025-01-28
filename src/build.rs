@@ -1,15 +1,18 @@
 use crate::Context;
 use std::{
     collections::HashSet,
-    ffi::OsStr,
+    ffi::OsString,
     fs,
     path::{Path, PathBuf},
     process::Command,
+    str::FromStr,
 };
 
-pub fn build_project(project_dir: &Path) -> anyhow::Result<()> {
-    let (project_src, project_target) =
-        find_project_dirs(project_dir).with_context(|| "Not at cppargo project root!")?;
+pub fn build_project(current_dir: &Path) -> anyhow::Result<()> {
+    let project_root =
+        find_project_root(current_dir).with_context(|| "Not at cppargo project root!")?;
+
+    let project_src = project_root.join("src");
 
     let src_files = find_src_files(&project_src).with_context(|| {
         format!(
@@ -18,32 +21,45 @@ pub fn build_project(project_dir: &Path) -> anyhow::Result<()> {
         )
     })?;
 
-    let Some(project_name) = project_dir.file_name() else {
-        anyhow::bail!(format!(
-            "Couldn't get project name from {}.",
-            project_dir.display()
-        ))
+    let project_manifest = project_root.join("Cppargo.toml");
+
+    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(project_manifest)?)?;
+    let Some(project_name) = manifest["project"]["name"].as_str() else {
+        anyhow::bail!("Failed to gather project name!")
     };
+
+    let project_target = project_root.join("target");
 
     build_src_files(src_files, &project_target, project_name)
         .with_context(|| "Failed to build source files!")?;
     Ok(())
 }
 
-fn find_project_dirs(project_dir: &Path) -> anyhow::Result<(PathBuf, PathBuf)> {
-    let project_src = project_dir.join("src");
-    let project_target = project_dir.join("target");
+fn find_project_root(dir: &Path) -> anyhow::Result<PathBuf> {
+    let project_root = match fs::read_dir(dir)?
+        .flatten()
+        .find(|f| f.file_name() == OsString::from_str("Cppargo.toml").unwrap())
+    {
+        Some(manifest) => {
+            if let Some(parent) = manifest.path().parent() {
+                parent.to_path_buf()
+            } else {
+                anyhow::bail!("Couldn't get root!");
+            }
+        }
+        None => {
+            if let Some(parent_dir) = dir.parent() {
+                find_project_root(parent_dir)?
+            } else {
+                anyhow::bail!(format!(
+                    "Failed to find project root up to {}!",
+                    dir.display()
+                ))
+            }
+        }
+    };
 
-    anyhow::ensure!(
-        project_src.exists() && project_target.exists(),
-        format!(
-            "No src {} and target {} directories.",
-            project_src.display(),
-            project_target.display()
-        )
-    );
-
-    Ok((project_src, project_target))
+    Ok(project_root)
 }
 
 fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
@@ -74,7 +90,7 @@ fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
 fn build_src_files(
     src_files: HashSet<PathBuf>,
     project_target: &Path,
-    project_name: &OsStr,
+    project_name: &str,
 ) -> anyhow::Result<()> {
     let output_file = project_target.join(project_name);
 

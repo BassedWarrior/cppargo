@@ -22,11 +22,7 @@ pub fn build_project(current_dir: &Path) -> anyhow::Result<()> {
     })?;
 
     let project_manifest = project_root.join("Cppargo.toml");
-
-    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(project_manifest)?)?;
-    let Some(project_name) = manifest["project"]["name"].as_str() else {
-        anyhow::bail!("Failed to gather project name!")
-    };
+    let project_name = get_project_name(&project_manifest)?;
 
     let project_target = project_root.join("target");
     ensure_target_dir_exists(&project_target)
@@ -87,6 +83,15 @@ fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
     );
 
     Ok(src_files)
+}
+
+fn get_project_name(project_manifest: &Path) -> anyhow::Result<String> {
+    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(project_manifest)?)?;
+    let Some(project_name) = manifest["project"]["name"].as_str() else {
+        anyhow::bail!("Failed to gather project name!")
+    };
+
+    Ok(String::from_str(project_name)?)
 }
 
 fn ensure_target_dir_exists(project_target: &Path) -> anyhow::Result<()> {

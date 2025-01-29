@@ -29,6 +29,8 @@ pub fn build_project(current_dir: &Path) -> anyhow::Result<()> {
     };
 
     let project_target = project_root.join("target");
+    ensure_target_dir_exists(&project_target)
+        .with_context(|| "Failed to ensure target directory exists for storing built binaries!")?;
 
     build_src_files(src_files, &project_target, project_name)
         .with_context(|| "Failed to build source files!")?;
@@ -85,6 +87,19 @@ fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
     );
 
     Ok(src_files)
+}
+
+fn ensure_target_dir_exists(project_target: &Path) -> anyhow::Result<()> {
+    if !project_target.try_exists()? {
+        fs::create_dir(project_target).with_context(|| {
+            format!(
+                "Failed to create project target directory at {}!",
+                project_target.display()
+            )
+        })?;
+    }
+
+    Ok(())
 }
 
 fn build_src_files(

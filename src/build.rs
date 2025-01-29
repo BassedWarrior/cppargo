@@ -28,8 +28,8 @@ pub fn build_project(current_dir: &Path) -> anyhow::Result<()> {
     ensure_target_dir_exists(&project_target)
         .with_context(|| "Failed to ensure target directory exists for storing built binaries!")?;
 
-    build_src_files(src_files, &project_target, project_name)
-        .with_context(|| "Failed to build source files!")?;
+    let binary_path = project_target.join(project_name);
+    build_src_files(src_files, &binary_path).with_context(|| "Failed to build source files!")?;
     Ok(())
 }
 
@@ -107,18 +107,16 @@ fn ensure_target_dir_exists(project_target: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn build_src_files(
-    src_files: HashSet<PathBuf>,
-    project_target: &Path,
-    project_name: &str,
-) -> anyhow::Result<()> {
-    let output_file = project_target.join(project_name);
-
+fn build_src_files(src_files: HashSet<PathBuf>, binary_path: &Path) -> anyhow::Result<()> {
     let output_args = [
         "-o",
-        output_file
-            .to_str()
-            .expect("Should be able to convert output_file to string"),
+        match binary_path.to_str() {
+            Some(s) => s,
+            None => anyhow::bail!(format!(
+                "Failed to parse binary path to string: {}",
+                binary_path.display()
+            )),
+        },
     ];
 
     let mut compiler = Command::new("g++");

@@ -15,7 +15,7 @@ const HELLO_WORLD_PROGRAM: &str = concat!(
     "}\n"
 );
 
-pub fn new_project(path: &Path) -> anyhow::Result<()> {
+pub fn main(path: &Path) -> anyhow::Result<()> {
     let project_root: PathBuf =
         create_project_fs(path).with_context(|| "Failed to create project file structure")?;
 

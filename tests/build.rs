@@ -9,7 +9,7 @@ fn fail_outside_cppargo_project() -> anyhow::Result<()> {
     cmd.current_dir(tmp_dir.path()).arg("build");
     cmd.assert()
         .failure()
-        .stderr(predicates::str::contains("Not at cppargo project root"));
+        .stderr(predicate::str::contains("Not at cppargo project root"));
 
     Ok(())
 }
@@ -27,7 +27,7 @@ fn fail_because_project_has_no_src_files() -> anyhow::Result<()> {
 
     let mut cmd = Command::cargo_bin("cppargo")?;
     cmd.current_dir(project_dir.path()).arg("build");
-    cmd.assert().failure().stderr(predicates::str::contains(
+    cmd.assert().failure().stderr(predicate::str::contains(
         "No source `.cpp` files to compile found",
     ));
 
@@ -51,7 +51,7 @@ fn succeed() -> anyhow::Result<()> {
     cmd.current_dir(tmp_dir.child("foo").path()).arg("build");
     cmd.assert()
         .success()
-        .stdout(predicates::str::contains("Project built successfully!"));
+        .stdout(predicate::str::contains("Project built successfully!"));
 
     Ok(())
 }

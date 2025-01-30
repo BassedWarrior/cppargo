@@ -5,10 +5,10 @@ use std::{
     process::Command,
 };
 
-pub fn run_project(project_dir: &Path) -> anyhow::Result<()> {
+pub fn main(project_dir: &Path) -> anyhow::Result<()> {
     let project_binary =
         find_project_binary(project_dir).with_context(|| "Failed to find project binary!")?;
-    run_project_binary(project_binary).with_context(|| "Failed to run project binary!")?;
+    run_project_binary(&project_binary).with_context(|| "Failed to run project binary!")?;
 
     Ok(())
 }
@@ -16,9 +16,8 @@ pub fn run_project(project_dir: &Path) -> anyhow::Result<()> {
 fn find_project_binary(project_dir: &Path) -> anyhow::Result<PathBuf> {
     let project_target = project_dir.join("target");
 
-    let project_name = match project_dir.file_name() {
-        Some(name) => name,
-        None => anyhow::bail!("Couldn't get project name."),
+    let Some(project_name) = project_dir.file_name() else {
+        anyhow::bail!("Couldn't get project name.");
     };
 
     let project_binary = project_target.join(project_name);
@@ -31,8 +30,8 @@ fn find_project_binary(project_dir: &Path) -> anyhow::Result<PathBuf> {
     Ok(project_binary)
 }
 
-fn run_project_binary(project_binary: PathBuf) -> anyhow::Result<()> {
-    Command::new(&project_binary)
+fn run_project_binary(project_binary: &PathBuf) -> anyhow::Result<()> {
+    Command::new(project_binary)
         .spawn()
         .with_context(|| {
             format!(

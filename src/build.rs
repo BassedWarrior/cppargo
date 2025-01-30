@@ -8,7 +8,7 @@ use std::{
     str::FromStr,
 };
 
-pub fn build_project(current_dir: &Path) -> anyhow::Result<()> {
+pub fn main(current_dir: &Path) -> anyhow::Result<()> {
     let project_root =
         find_project_root(current_dir).with_context(|| "Not at cppargo project root!")?;
 

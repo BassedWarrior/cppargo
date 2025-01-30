@@ -13,7 +13,7 @@ fn succeed_create_and_build_project() -> anyhow::Result<()> {
     cmd.current_dir(tmp_dir.child("foo").path()).arg("build");
     cmd.assert()
         .success()
-        .stdout(predicates::str::contains("Project built successfully!"));
+        .stdout(predicate::str::contains("Project built successfully!"));
 
     Ok(())
 }
@@ -35,7 +35,7 @@ fn succeed_build_and_run_project() -> anyhow::Result<()> {
     cmd.current_dir(project_dir.path()).arg("run");
     cmd.assert()
         .success()
-        .stdout(predicates::str::contains("Hello World!"));
+        .stdout(predicate::str::contains("Hello World!"));
 
     Ok(())
 }

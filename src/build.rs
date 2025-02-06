@@ -42,7 +42,10 @@ fn find_project_root(dir: &Path) -> anyhow::Result<PathBuf> {
             if let Some(parent) = manifest.path().parent() {
                 parent.to_path_buf()
             } else {
-                anyhow::bail!("Couldn't get root!");
+                anyhow::bail!(format!(
+                    "Found manifest {} has no parent directory to use as project root!",
+                    manifest.path().display()
+                ));
             }
         }
         None => {
@@ -50,7 +53,7 @@ fn find_project_root(dir: &Path) -> anyhow::Result<PathBuf> {
                 find_project_root(parent_dir)?
             } else {
                 anyhow::bail!(format!(
-                    "Failed to find project root up to {}!",
+                    "Failed to find `Cppargo.toml` up to {}!",
                     dir.display()
                 ))
             }

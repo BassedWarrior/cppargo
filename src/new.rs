@@ -157,7 +157,7 @@ mod tests {
         let tmp_dir = assert_fs::TempDir::new()?;
         let project_root = tmp_dir.child("foo");
 
-        new_project(&project_root).with_context(|| "Failed to create new project!")?;
+        main(&project_root).with_context(|| "Failed to create new project!")?;
 
         let project_manifest = project_root.child("Cppargo.toml");
         let project_src = project_root.child("src");
@@ -166,7 +166,7 @@ mod tests {
         project_root.assert(predicates::path::is_dir());
         project_manifest.assert("[project]\nname = \"foo\"\n");
         project_src.assert(predicates::path::is_dir());
-        project_hello_world.assert(predicates::path::is_file());
+        project_hello_world.assert(HELLO_WORLD_PROGRAM);
 
         Ok(())
     }

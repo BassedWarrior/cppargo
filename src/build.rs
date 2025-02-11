@@ -159,21 +159,61 @@ mod tests {
         "}\n"
     );
 
-    #[test]
-    fn proper_find_dirs() -> anyhow::Result<()> {
-        let project_root = assert_fs::TempDir::new()?;
-        let project_src = project_root.child("src");
-        let project_target = project_root.child("target");
-        project_src.create_dir_all()?;
-        project_target.create_dir_all()?;
+    #[cfg(test)]
+    mod find_project_root {
+        use super::*;
 
-        anyhow::ensure!(
-            (project_src.to_path_buf(), project_target.to_path_buf())
-                == find_project_dirs(&project_root)?,
-            "Failed to find proper project directories!"
-        );
+        #[test]
+        fn in_current_dir() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_manifest = tmp_dir.child("Cppargo.toml");
+            project_manifest.touch()?;
 
-        Ok(())
+            anyhow::ensure!(
+                tmp_dir.to_path_buf() == find_project_root(&tmp_dir)?,
+                "Failed to find project root from project root!"
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn from_nested_dir() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_manifest = tmp_dir.child("Cppargo.toml");
+            project_manifest.touch()?;
+
+            let project_src = tmp_dir.child("src");
+            project_src.create_dir_all()?;
+
+            anyhow::ensure!(
+                tmp_dir.to_path_buf() == find_project_root(&project_src)?,
+                "Failed to find project root from inside nested directory!"
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn fail_outside_project() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+
+            match find_project_root(&tmp_dir) {
+                Ok(root) => {
+                    anyhow::bail!(format!("Found some project root at {}!", root.display()))
+                }
+                Err(err) => {
+                    if err.to_string() != "Failed to find `Cppargo.toml` up to /!" {
+                        anyhow::bail!(format!(
+                            "Got a non-expected error: \"{}\"!",
+                            err.to_string()
+                        ))
+                    }
+                }
+            }
+
+            Ok(())
+        }
     }
 
     #[test]

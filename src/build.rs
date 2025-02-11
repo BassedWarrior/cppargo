@@ -145,6 +145,9 @@ mod tests {
     use super::*;
     use assert_fs::prelude::*;
 
+    const PROJECT_MANIFEST: &str = "[project]\nname = \"foo\"\n";
+    const PROJEJCT_MANIFEST_WITH_NO_NAME: &str = "[project]\nname =\n";
+
     const MAIN_FILE_WITH_INCLUDE_MODULE: &str = concat!(
         "#include <iostream>\n",
         "#include \"module.hpp\"\n",
@@ -368,6 +371,55 @@ mod tests {
             ensure_found_expected_files(&found_src_files, &expected_src_files)?;
 
             Ok(())
+        }
+    }
+
+    #[cfg(test)]
+    mod get_project_name {
+        use super::*;
+
+        #[test]
+        fn succeed() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_manifest = tmp_dir.child("Cppargo.toml");
+            project_manifest.write_str(PROJECT_MANIFEST)?;
+
+            let project_name = get_project_name(project_manifest.path())?;
+
+            anyhow::ensure!(
+                project_name == "foo",
+                format!(
+                    "Got wrong project name!\nExpected: foo\nGot: {}\n",
+                    project_name
+                )
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn no_name_in_manifest() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_manifest = tmp_dir.child("Cppargo.toml");
+            project_manifest.write_str(PROJEJCT_MANIFEST_WITH_NO_NAME)?;
+
+            match get_project_name(project_manifest.path()) {
+                Err(err) => {
+                    if err.to_string()
+                        == format!(
+                            "Failed to parse project manifest {}!",
+                            project_manifest.path().display()
+                        )
+                    {
+                        return Ok(());
+                    }
+
+                    anyhow::bail!(err);
+                }
+                Ok(name) => {
+                    anyhow::bail!(format!("Found unexpected name {name}!"));
+                }
+            }
         }
     }
 

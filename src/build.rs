@@ -216,62 +216,153 @@ mod tests {
         }
     }
 
-    #[test]
-    fn proper_find_src_files() -> anyhow::Result<()> {
-        let tmp_dir = assert_fs::TempDir::new()?;
-        let project_src = tmp_dir.child("src");
+    #[cfg(test)]
+    mod find_src_files {
+        use super::*;
 
-        // Indispensable main project file.
-        let main_file = project_src.child("main.cpp");
-        main_file.touch()?;
+        fn ensure_found_expected_files(
+            found: &HashSet<PathBuf>,
+            expected: &HashSet<PathBuf>,
+        ) -> anyhow::Result<()> {
+            anyhow::ensure!(
+                found == expected,
+                format!(
+                    "Failed to gather all source files!\nGot: {:?}.\nExpected: {:?}",
+                    found, expected
+                )
+            );
 
-        // Same-level module files files.
-        let module_header_file = project_src.child("module.hpp");
-        module_header_file.touch()?;
-        let module_file = project_src.child("module.cpp");
-        module_file.touch()?;
+            Ok(())
+        }
 
-        // An empty subdirectory.
-        let empty_subdir = project_src.child("empty");
-        empty_subdir.create_dir_all()?;
+        #[test]
+        fn find_main() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_src = tmp_dir.child("src");
 
-        // A subdirectory with both `.cpp` and `.hpp` files.
-        let header_and_code_subdir = project_src.child("header_and_code");
-        let header_and_code_header = header_and_code_subdir.child("foo.hpp");
-        header_and_code_header.touch()?;
-        let header_and_code_code = header_and_code_subdir.child("foo.cpp");
-        header_and_code_code.touch()?;
+            let main_file = project_src.child("main.cpp");
+            main_file.touch()?;
 
-        // A subdirectory with only `.hpp` files.
-        let header_subdir = project_src.child("header");
-        let header_header = header_subdir.child("bar.hpp");
-        header_header.touch()?;
+            let found_src_files = find_src_files(&project_src)?;
+            let expected_src_files = HashSet::from([main_file].map(|f| f.to_path_buf()));
 
-        // A doubly nested subdirectory to ensure recursivity.
-        let double_nested_code_subdir = project_src.child("double").child("nested");
-        let double_nested_file = double_nested_code_subdir.child("nested.cpp");
-        double_nested_file.touch()?;
+            ensure_found_expected_files(&found_src_files, &expected_src_files)?;
 
-        let found_src_files = find_src_files(&project_src)?;
-        let expected_src_files = HashSet::from(
-            [
-                main_file,
-                module_file,
-                header_and_code_code,
-                double_nested_file,
-            ]
-            .map(|f| f.to_path_buf()),
-        );
+            Ok(())
+        }
 
-        anyhow::ensure!(
-            found_src_files == expected_src_files,
-            format!(
-                "Failed to gather all source files!\nExpected: {:?}.\nGot: {:?}",
-                expected_src_files, found_src_files
-            )
-        );
+        #[test]
+        fn find_only_cpp_files() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_src = tmp_dir.child("src");
 
-        Ok(())
+            let main_file = project_src.child("main.cpp");
+            main_file.touch()?;
+
+            let header_file = project_src.child("header.hpp");
+            header_file.touch()?;
+
+            let text_file = project_src.child("text.txt");
+            text_file.touch()?;
+
+            let c_file = project_src.child("c_file.c");
+            c_file.touch()?;
+
+            let c_header_file = project_src.child("c_header.h");
+            c_header_file.touch()?;
+
+            let binary_file = project_src.child("binary");
+            binary_file.touch()?;
+
+            let found_src_files = find_src_files(&project_src)?;
+            let expected_src_files = HashSet::from([main_file].map(|f| f.to_path_buf()));
+
+            ensure_found_expected_files(&found_src_files, &expected_src_files)?;
+
+            Ok(())
+        }
+
+        #[test]
+        fn find_same_dir_files() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_src = tmp_dir.child("src");
+
+            let main_file = project_src.child("main.cpp");
+            main_file.touch()?;
+
+            let other_file = project_src.child("other.cpp");
+            other_file.touch()?;
+
+            let found_src_files = find_src_files(&project_src)?;
+            let expected_src_files =
+                HashSet::from([main_file, other_file].map(|f| f.to_path_buf()));
+
+            ensure_found_expected_files(&found_src_files, &expected_src_files)?;
+
+            Ok(())
+        }
+
+        #[test]
+        fn find_with_empty_directories() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_src = tmp_dir.child("src");
+
+            let main_file = project_src.child("main.cpp");
+            main_file.touch()?;
+
+            let empty_dir = project_src.child("empty");
+            empty_dir.create_dir_all()?;
+
+            let found_src_files = find_src_files(&project_src)?;
+            let expected_src_files = HashSet::from([main_file].map(|f| f.to_path_buf()));
+
+            ensure_found_expected_files(&found_src_files, &expected_src_files)?;
+
+            Ok(())
+        }
+
+        #[test]
+        fn find_within_nested_directories() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_src = tmp_dir.child("src");
+
+            let main_file = project_src.child("main.cpp");
+            main_file.touch()?;
+
+            let nested_file = project_src.child("nested").child("nested.cpp");
+            nested_file.touch()?;
+
+            let found_src_files = find_src_files(&project_src)?;
+            let expected_src_files =
+                HashSet::from([main_file, nested_file].map(|f| f.to_path_buf()));
+
+            ensure_found_expected_files(&found_src_files, &expected_src_files)?;
+
+            Ok(())
+        }
+
+        #[test]
+        fn find_within_doubly_nested_directories() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_src = tmp_dir.child("src");
+
+            let main_file = project_src.child("main.cpp");
+            main_file.touch()?;
+
+            let doubly_nested_file = project_src
+                .child("doubly")
+                .child("nested")
+                .child("doubly_nested.cpp");
+            doubly_nested_file.touch()?;
+
+            let found_src_files = find_src_files(&project_src)?;
+            let expected_src_files =
+                HashSet::from([main_file, doubly_nested_file].map(|f| f.to_path_buf()));
+
+            ensure_found_expected_files(&found_src_files, &expected_src_files)?;
+
+            Ok(())
+        }
     }
 
     #[test]

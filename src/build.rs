@@ -423,6 +423,36 @@ mod tests {
         }
     }
 
+    #[cfg(test)]
+    mod ensure_target_dir_exists {
+        use super::*;
+
+        #[test]
+        fn create_missing_target_dir() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+
+            let project_target = tmp_dir.child("target");
+
+            ensure_target_dir_exists(project_target.path())?;
+            project_target.assert(predicates::path::is_dir());
+
+            Ok(())
+        }
+
+        #[test]
+        fn target_dir_already_exists() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+
+            let project_target = tmp_dir.child("target");
+            project_target.create_dir_all()?;
+
+            ensure_target_dir_exists(project_target.path())?;
+            project_target.assert(predicates::path::is_dir());
+
+            Ok(())
+        }
+    }
+
     #[test]
     fn proper_build_src_files() -> anyhow::Result<()> {
         let project_root = assert_fs::TempDir::new()?;

@@ -89,7 +89,13 @@ fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
 }
 
 fn get_project_name(project_manifest: &Path) -> anyhow::Result<String> {
-    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(project_manifest)?)?;
+    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(project_manifest)?)
+        .with_context(|| {
+            format!(
+                "Failed to parse project manifest {}!",
+                project_manifest.display()
+            )
+        })?;
     let Some(project_name) = manifest["project"]["name"].as_str() else {
         anyhow::bail!("Failed to gather project name!")
     };

@@ -16,8 +16,6 @@ where
     ));
     let project_src = project_root.child("src");
     project_src.assert(predicates::path::is_dir());
-    let project_target = project_root.child("target");
-    project_target.assert(predicates::path::is_dir());
     let main_file = project_src.child("main.cpp");
     main_file.assert(predicates::path::is_file());
     main_file.assert(HELLO_WORLD_PROGRAM);

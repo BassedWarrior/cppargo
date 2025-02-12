@@ -479,21 +479,23 @@ mod tests {
     }
 
     #[test]
-    fn proper_build_project() -> anyhow::Result<()> {
+    fn proper_main() -> anyhow::Result<()> {
         let project_root = assert_fs::TempDir::new()?;
         let project_src = project_root.child("src");
         let project_target = project_root.child("target");
         project_target.create_dir_all()?;
+
+        let project_manifest = project_root.child("Cppargo.toml");
+        project_manifest.write_str(PROJECT_MANIFEST)?;
 
         let main_file = project_src.child("main.cpp");
         main_file.write_str(MAIN_FILE_WITH_INCLUDE_MODULE)?;
         let module_file = project_src.child("module.hpp");
         module_file.write_str(MODULE_FILE)?;
 
-        build_project(&project_root)?;
-        let project_name = project_root.file_name().unwrap();
+        main(&project_root)?;
         project_target
-            .child(project_name)
+            .child("foo")
             .assert(predicates::path::is_file());
 
         Ok(())

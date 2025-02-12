@@ -21,18 +21,18 @@ fn succeed_create_and_build_project() -> anyhow::Result<()> {
 #[test]
 fn succeed_build_and_run_project() -> anyhow::Result<()> {
     let tmp_dir = assert_fs::TempDir::new()?;
-    let project_dir = tmp_dir.child("foo");
-    project_dir.create_dir_all()?;
-    let project_src = project_dir.child("src");
+    let project_root = tmp_dir.child("foo");
+    project_root.create_dir_all()?;
+    let project_src = project_root.child("src");
     project_src.create_dir_all()?;
-    let project_target = project_dir.child("target");
+    let project_target = project_root.child("target");
     project_target.create_dir_all()?;
 
     let main_file = project_src.child("main.cpp");
     main_file.write_str(HELLO_WORLD_PROGRAM)?;
 
     let mut cmd = Command::cargo_bin("cppargo")?;
-    cmd.current_dir(project_dir.path()).arg("run");
+    cmd.current_dir(project_root.path()).arg("run");
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Hello World!"));

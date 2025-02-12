@@ -25,6 +25,9 @@ fn fail_because_project_has_no_src_files() -> anyhow::Result<()> {
     let project_target = project_root.child("target");
     project_target.create_dir_all()?;
 
+    let project_manifest = project_root.child("Cppargo.toml");
+    project_manifest.write_str(PROJECT_MANIFEST)?;
+
     let mut cmd = Command::cargo_bin("cppargo")?;
     cmd.current_dir(project_root.path()).arg("build");
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -43,6 +46,9 @@ fn succeed() -> anyhow::Result<()> {
     project_src.create_dir_all()?;
     let project_target = project_root.child("target");
     project_target.create_dir_all()?;
+
+    let project_manifest = project_root.child("Cppargo.toml");
+    project_manifest.write_str(PROJECT_MANIFEST)?;
 
     let main_file = project_src.child("main.cpp");
     main_file.write_str(HELLO_WORLD_PROGRAM)?;

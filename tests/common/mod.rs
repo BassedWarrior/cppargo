@@ -12,3 +12,5 @@ pub const HELLO_WORLD_PROGRAM: &str = concat!(
     "    return 0;\n",
     "}\n"
 );
+
+pub const PROJECT_MANIFEST: &str = "[project]\nname = \"foo\"\n";

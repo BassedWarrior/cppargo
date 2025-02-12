@@ -28,6 +28,9 @@ fn succeed_build_and_run_project() -> anyhow::Result<()> {
     let project_target = project_root.child("target");
     project_target.create_dir_all()?;
 
+    let project_manifest = project_root.child("Cppargo.toml");
+    project_manifest.write_str(PROJECT_MANIFEST)?;
+
     let main_file = project_src.child("main.cpp");
     main_file.write_str(HELLO_WORLD_PROGRAM)?;
 

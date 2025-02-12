@@ -455,7 +455,8 @@ mod tests {
 
     #[test]
     fn proper_build_src_files() -> anyhow::Result<()> {
-        let project_root = assert_fs::TempDir::new()?;
+        let tmp_dir = assert_fs::TempDir::new()?;
+        let project_root = tmp_dir.child("foo");
         let project_src = project_root.child("src");
         let project_target = project_root.child("target");
         project_target.create_dir_all()?;
@@ -465,9 +466,11 @@ mod tests {
         let module_file = project_src.child("module.hpp");
         module_file.write_str(MODULE_FILE)?;
 
+        let project_binary = project_target.child("foo");
+
         let src_files = HashSet::from([main_file.to_path_buf()]);
-        let project_name = project_root.file_name().unwrap();
-        build_src_files(src_files, project_target.path(), project_name)?;
+        let project_name = "foo";
+        build_src_files(src_files, project_binary.path())?;
         project_target
             .child(project_name)
             .assert(predicates::path::is_file());

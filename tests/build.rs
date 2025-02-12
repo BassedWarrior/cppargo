@@ -7,9 +7,9 @@ fn fail_outside_cppargo_project() -> anyhow::Result<()> {
 
     let mut cmd = Command::cargo_bin("cppargo")?;
     cmd.current_dir(tmp_dir.path()).arg("build");
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Not at cppargo project root"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "Failed to find project manifest `Cppargo.toml` up to /!",
+    ));
 
     Ok(())
 }

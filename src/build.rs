@@ -216,7 +216,8 @@ mod tests {
                     anyhow::bail!(format!("Found some project root at {}!", root.display()))
                 }
                 Err(err) => {
-                    if err.to_string() != "Failed to find `Cppargo.toml` up to /!" {
+                    if err.to_string() != "Failed to find project manifest `Cppargo.toml` up to /!"
+                    {
                         anyhow::bail!(format!(
                             "Got a non-expected error: \"{}\"!",
                             err.to_string()

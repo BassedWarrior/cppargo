@@ -9,8 +9,12 @@ use std::{
 };
 
 pub fn main(current_dir: &Path) -> anyhow::Result<()> {
-    let project_root =
-        find_project_root(current_dir).with_context(|| "Not at cppargo project root!")?;
+    let project_root = find_project_root(current_dir).with_context(|| {
+        format!(
+            "Current directory {} is not inside a `cppargo` project!",
+            current_dir.display()
+        )
+    })?;
 
     let project_src = project_root.join("src");
 
@@ -53,7 +57,7 @@ fn find_project_root(dir: &Path) -> anyhow::Result<PathBuf> {
                 find_project_root(parent_dir)?
             } else {
                 anyhow::bail!(format!(
-                    "Failed to find `Cppargo.toml` up to {}!",
+                    "Failed to find project manifest `Cppargo.toml` up to {}!",
                     dir.display()
                 ))
             }

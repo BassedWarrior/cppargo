@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic)]
+
 use anyhow::{self, Context};
 use std::env;
 
@@ -14,23 +16,22 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::New { path } => {
             println!("Creating new project {}...", path.display());
-            new::new_project(&path)
+            new::main(&path)
                 .with_context(|| format!("Failed to create project {}", &path.display()))?;
             println!("Project {} created successfully!", path.display());
         }
         Commands::Build => {
             println!("Building project...");
-            build::build_project(&env::current_dir()?)
-                .with_context(|| "Failed to build project.")?;
+            build::main(&env::current_dir()?).with_context(|| "Failed to build project.")?;
             println!("Project built successfully!");
         }
         Commands::Run => {
             println!("Building project...");
-            build::build_project(&env::current_dir()?)
+            build::main(&env::current_dir()?)
                 .with_context(|| "Failed to build project before attempting to run it.")?;
             println!("Project built successfully!");
             println!("Running project...");
-            run::run_project(&env::current_dir()?).with_context(|| "Failed to run project")?;
+            run::main(&env::current_dir()?).with_context(|| "Failed to run project")?;
         }
     };
 

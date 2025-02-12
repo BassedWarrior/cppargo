@@ -15,9 +15,11 @@ const HELLO_WORLD_PROGRAM: &str = concat!(
     "}\n"
 );
 
-pub fn new_project(path: &Path) -> anyhow::Result<()> {
+pub fn main(path: &Path) -> anyhow::Result<()> {
     let project_root: PathBuf =
         create_project_fs(path).with_context(|| "Failed to create project file structure")?;
+
+    create_manifest(&project_root)?;
 
     create_hello_world(&project_root.join("src"))
         .with_context(|| "Failed to create simple 'Hello World!' program.")?;
@@ -47,15 +49,30 @@ fn create_project_fs(project_root: &Path) -> anyhow::Result<PathBuf> {
         )
     })?;
 
-    // Create `target` directory where all binary files should be.
-    fs::create_dir(project_root.join("target")).with_context(|| {
-        format!(
-            "Failed to create project target directory {}.",
-            project_root.join("target").display()
-        )
-    })?;
-
     Ok(project_root.to_path_buf())
+}
+
+fn create_manifest(project_root: &Path) -> anyhow::Result<()> {
+    let name = match project_root.file_name() {
+        Some(osstr) => match osstr.to_str() {
+            Some(str) => str.to_string(),
+            None => anyhow::bail!(format!("Failed to convert project name to str {osstr:?}!")),
+        },
+        None => anyhow::bail!(format!(
+            "Failed to get project name from project root: {}!",
+            project_root.display()
+        )),
+    };
+
+    let mut manifest = toml_edit::DocumentMut::new();
+    manifest["project"] = toml_edit::Item::Table(toml_edit::Table::new());
+    manifest["project"]["name"] = toml_edit::value(name);
+
+    let manifest_path = project_root.join("Cppargo.toml");
+    fs::write(&manifest_path, manifest.to_string())
+        .with_context(|| format!("Failed to create manifest at {}!", manifest_path.display()))?;
+
+    Ok(())
 }
 
 fn create_hello_world(project_src: &Path) -> anyhow::Result<()> {
@@ -84,11 +101,23 @@ mod tests {
             .with_context(|| "Failed to create project file structure!")?;
 
         let project_src = project_root.child("src");
-        let project_target = project_root.child("target");
 
         project_root.assert(predicates::path::is_dir());
         project_src.assert(predicates::path::is_dir());
-        project_target.assert(predicates::path::is_dir());
+
+        Ok(())
+    }
+
+    #[test]
+    fn proper_create_manifest() -> anyhow::Result<()> {
+        let tmp_dir = assert_fs::TempDir::new()?;
+        let project_root = tmp_dir.child("foo");
+        project_root.create_dir_all()?;
+        let project_manifest = project_root.child("Cppargo.toml");
+
+        create_manifest(project_root.path())?;
+
+        project_manifest.assert(concat!("[project]\n", "name = \"foo\"\n"));
 
         Ok(())
     }
@@ -102,11 +131,9 @@ mod tests {
             .with_context(|| "Failed to create project file structure!")?;
 
         let project_src = project_root.child("src");
-        let project_target = project_root.child("target");
 
         project_root.assert(predicates::path::is_dir());
         project_src.assert(predicates::path::is_dir());
-        project_target.assert(predicates::path::is_dir());
 
         Ok(())
     }
@@ -130,16 +157,16 @@ mod tests {
         let tmp_dir = assert_fs::TempDir::new()?;
         let project_root = tmp_dir.child("foo");
 
-        new_project(&project_root).with_context(|| "Failed to create new project!")?;
+        main(&project_root).with_context(|| "Failed to create new project!")?;
 
+        let project_manifest = project_root.child("Cppargo.toml");
         let project_src = project_root.child("src");
-        let project_target = project_root.child("target");
         let project_hello_world = project_src.child("main.cpp");
 
         project_root.assert(predicates::path::is_dir());
+        project_manifest.assert("[project]\nname = \"foo\"\n");
         project_src.assert(predicates::path::is_dir());
-        project_target.assert(predicates::path::is_dir());
-        project_hello_world.assert(predicates::path::is_file());
+        project_hello_world.assert(HELLO_WORLD_PROGRAM);
 
         Ok(())
     }

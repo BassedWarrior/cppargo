@@ -19,6 +19,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.94"
 clap = { version = "4.5.23", features = ["derive"] }
+toml_edit = "0.22.22"
 
 [dev-dependencies]
 assert_cmd = "2.0.16"

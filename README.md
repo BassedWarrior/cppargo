@@ -78,6 +78,48 @@ cargo install --git https://www.github.com/bassedwarrior/cppargo
 cargo install --path .
 ```
 
+## Quickstart
+
+1. Create a new project at any `PATH` and move to that `PATH`.
+
+```sh
+cppargo new <PATH>
+cd <PATH>
+```
+
+2. Run the sample hello world program automatically created by `cppargo`.
+
+```sh
+cppargo run
+```
+
+3. Edit the main `src/main.cpp` file as desired.
+4. Build or build and run the new project.
+    - Build
+
+        ```sh
+        cppargo build
+        ```
+
+    - Build and run
+
+        ```sh
+        cppargo run
+        ```
+
+5. Build, but run manually.
+    1. Build
+
+        ```sh
+        cppargo build
+        ```
+
+    2. Run manually
+
+        ```sh
+        ./target/<PROJECT-NAME>
+        ```
+
 ## Usage
 
 ### Create new project

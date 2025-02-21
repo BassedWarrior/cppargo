@@ -5,18 +5,18 @@ use std::{
     process::Command,
 };
 
-pub fn main(project_dir: &Path) -> anyhow::Result<()> {
+pub fn main(project_root: &Path) -> anyhow::Result<()> {
     let project_binary =
-        find_project_binary(project_dir).with_context(|| "Failed to find project binary!")?;
+        find_project_binary(project_root).with_context(|| "Failed to find project binary!")?;
     run_project_binary(&project_binary).with_context(|| "Failed to run project binary!")?;
 
     Ok(())
 }
 
-fn find_project_binary(project_dir: &Path) -> anyhow::Result<PathBuf> {
-    let project_target = project_dir.join("target");
+fn find_project_binary(project_root: &Path) -> anyhow::Result<PathBuf> {
+    let project_target = project_root.join("target");
 
-    let Some(project_name) = project_dir.file_name() else {
+    let Some(project_name) = project_root.file_name() else {
         anyhow::bail!("Couldn't get project name.");
     };
 

@@ -78,6 +78,48 @@ cargo install --git https://www.github.com/bassedwarrior/cppargo
 cargo install --path .
 ```
 
+## Quickstart
+
+1. Create a new project at any `PATH` and move to that `PATH`.
+
+```sh
+cppargo new <PATH>
+cd <PATH>
+```
+
+2. Run the sample hello world program automatically created by `cppargo`.
+
+```sh
+cppargo run
+```
+
+3. Edit the main `src/main.cpp` file as desired.
+4. Build or build and run the new project.
+    - Build
+
+        ```sh
+        cppargo build
+        ```
+
+    - Build and run
+
+        ```sh
+        cppargo run
+        ```
+
+5. Build, but run manually.
+    1. Build
+
+        ```sh
+        cppargo build
+        ```
+
+    2. Run manually
+
+        ```sh
+        ./target/<PROJECT-NAME>
+        ```
+
 ## Usage
 
 ### Create new project
@@ -88,41 +130,58 @@ In order to create a new project, use the command
 cppargo new <PATH>
 ```
 
-This will create a new directory `PATH` in the current working directory. 
+This will create a new directory at `PATH`. Relative or absolute paths are
+accepted, and will be created accordingly. This directory will be considered
+the root of the `cppargo` project.
 
-Inside of which it will also create a `src` directory with a mock `main.cpp` 
-hello world program. This is the directory where all of the source files for 
-the project should be included. Currently, `cppargo` doesn't support any
-sub-directories inside the `src` directory for the source `.cpp` files.
+Inside the project root directory, `cppargo` will also create a `Cppargo.toml`
+manifest file akin to a `Cargo.toml` file used by `cargo`. Internally,
+`cppargo` looks for such a file to determine the project root, or determine
+that it is not within a `cppargo` project.
 
-It will also create a `target` directory where the compiled excecutable files
-are to be stored.
+And finally, `cppargo` will create a `src` directory with a basic
+`src/main.cpp` "Hello World!" C++ program. This is the directory where all of
+the source files for the project should be included.
 
 ### Build projects
 
-From inside the project root directory created by the `cppargo new <PATH>`
-command, in order to build a project, use the command
+From inside a `cppargo` project, in order to build a project, use the command
 
 ```sh
 cppargo build
 ```
 
-Make sure to run this command within the project directory. As it will look 
-for the `src` directory to compile all of the `.cpp` files insde it using `g++`
-to create the compiled excecutable file within the `target` directory. The
-excecutable file's name is currently determined by the name `PATH` of the
-project root directory created by the command `cppargo new <PATH>`.
+Firstly, `cppargo` will look for a `Cppargo.toml` manifest file in the current
+directory. If it doesn't find one, then it will check the parent directory's
+contents recursively for it. If it fails to find a `Cppargo.toml` file, then it
+exits with an error due to not being inside a `cppargo` project, as the
+`Cppargo.toml` determines the root of any `cppargo` project.
+
+From the project root, it will look for the `PROJECT_ROOT/src` directory to
+find all of the `.cpp` files insde it. The file structure inside the `src`
+directory is irrelevant to `cppargo`, since it will search exhaustively all
+subdirectories to find all `.cpp` files.
+
+Once gathered, all of the `.cpp` files are sent as arguments to `g++`
+to be compiled. This means that `cppargo` does no linkage or compilation of its
+own, nor does it check for any bad `#include` statements, or the lack thereof.
+
+The compiled excecutable file is then stored within a `PROJECT_ROOT/target`
+directory. `cppargo` first checks to ensure that the directory exists, and
+creates it if it doesn't exist. The excecutable file's name is gathered from
+the project manifest by reading the project's name. The compiled excecutable is
+then placed at `PROJECT_ROOT/target/PROJECT_NAME`.
 
 ### Run projects
 
-From inside the project root directory created by the `cppargo new <PATH>`
-command, in order to run a project, use the command
+From inside a `cppargo` project, in order to run a project, use the command
 
 ```sh
 cppargo run
 ```
 
-Within the project directory. This will first perform a `cppargo build` and 
-then run the `target/PATH` file generated after a successful compilation. The
-proper working directory for the excecutable will be the project root directory
-created by the `cppargo new <PATH>` command.
+This will first perform a `cppargo build` and then run the
+`PROJECT_ROOT/target/PATH` file generated after a successful compilation. The
+proper working directory for the excecutable will be the same as the one
+`cppargo` was excecuted in. This should be kept in mind when the program
+expects a certain file structure or a certain working directory.

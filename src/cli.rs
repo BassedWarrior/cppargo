@@ -12,24 +12,38 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Creates a new cppargo project at <path>
+    /// Create a new project.
     ///
-    /// This command will create a new cppargo project in the given directory.
-    /// This includes a sample source file "Hello World!" program
-    /// (`src/main.cpp`).
+    /// This command will create a new cppargo project at `<PATH>` by creating a
+    /// directory at `<PATH>`, a manifest `<PATH>/Cppargo.toml` file with the
+    /// project name, a `<PATH>/src` directory for source `.cpp` files, and a
+    /// `<PATH>/src/main.cpp` sample "Hello World!" file.
+    ///
+    /// This command fails if `<PATH>` already exists.
     #[command(visible_alias = "n")]
-    New { path: PathBuf },
-    /// Compile a local project.
+    New {
+        // Path where the project will be created.
+        #[arg(required = true)]
+        path: PathBuf
+    },
+    /// Compile a project.
     ///
-    /// Iterates over the `src` directory in order to find all `.cpp` source files
-    /// and gives it to the `g++` compiler to store it in the `target` directory
-    /// with the project name.
+    /// Search for the project root by looking for a project manifest
+    /// `Cppargo.toml` file in the current, and any parent directories and read
+    /// the project name, to use it for the compiled binary file name.
+    ///
+    /// Iterates over the project `PROJECT_ROOT/src` directory in order to
+    /// find all `.cpp` source files and give them to the `g++` compiler. The
+    /// compiled binary file is stored at `PROJECT_ROOT/target/PROJECT_NAME`.
+    /// If the `PROJECT_ROOT/target` directory doesn't already exist, it
+    /// creates it before compiling.
     #[command(visible_alias = "b")]
     Build,
-    /// Run a binary of the local project.
+    /// Run a project.
     ///
-    /// Compile the project, and then excecute the compiled binary stored in
-    /// the `target` directory.
+    /// Compile the project by using the same functionality as the `build`
+    /// subcommand (see `cppargo help build`), and then excecute the compiled
+    /// binary `PROJECT_ROOT/target/PROJECT_NAME` from the current directory.
     #[command(visible_alias = "r")]
     Run,
 }

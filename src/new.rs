@@ -131,6 +131,21 @@ mod tests {
     }
 
     #[test]
+    fn proper_initialize_vcs() -> anyhow::Result<()> {
+        let tmp_dir = assert_fs::TempDir::new()?;
+        let project_root = tmp_dir.child("test");
+        project_root.create_dir_all()?;
+
+        initialize_vcs(&project_root)?;
+
+        let project_git_dir = project_root.child(".git");
+
+        project_git_dir.assert(predicates::path::is_dir());
+
+        Ok(())
+    }
+
+    #[test]
     fn proper_create_manifest() -> anyhow::Result<()> {
         let tmp_dir = assert_fs::TempDir::new()?;
         let project_root = tmp_dir.child("foo");

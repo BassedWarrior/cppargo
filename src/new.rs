@@ -1,6 +1,8 @@
 use std::{
     fs,
+    io::ErrorKind,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use crate::Context;
@@ -18,6 +20,8 @@ const HELLO_WORLD_PROGRAM: &str = concat!(
 pub fn main(path: &Path) -> anyhow::Result<()> {
     let project_root: PathBuf =
         create_project_fs(path).with_context(|| "Failed to create project file structure")?;
+
+    initialize_vcs(&project_root)?;
 
     create_manifest(&project_root)?;
 
@@ -50,6 +54,24 @@ fn create_project_fs(project_root: &Path) -> anyhow::Result<PathBuf> {
     })?;
 
     Ok(project_root.to_path_buf())
+}
+
+fn initialize_vcs(project_root: &Path) -> anyhow::Result<()> {
+    if let Err(err) = Command::new("git").arg("init").arg(project_root).status() {
+        if let ErrorKind::NotFound = err.kind() {
+            eprintln!(concat!(
+                "[WARN] Couldn't initialize project as git repo.",
+                " Ensure it is installed."
+            ));
+        } else {
+            anyhow::bail!(format!(
+                "Failed to initialize project directory {} as a git repo!",
+                project_root.display()
+            ));
+        }
+    }
+
+    Ok(())
 }
 
 fn create_manifest(project_root: &Path) -> anyhow::Result<()> {

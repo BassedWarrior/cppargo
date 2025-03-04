@@ -8,6 +8,13 @@ fn ensure_project_created_successfully<T>(project_root: T)
 where
     T: PathChild + PathAssert + Deref<Target = Path>,
 {
+    ensure_project_structure_created_successfully(&project_root);
+}
+
+fn ensure_project_structure_created_successfully<T>(project_root: &T)
+where
+    T: PathChild + PathAssert + Deref<Target = Path>,
+{
     project_root.assert(predicates::path::is_dir());
     let project_manifest = project_root.child("Cppargo.toml");
     project_manifest.assert(format!(

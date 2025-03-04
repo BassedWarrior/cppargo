@@ -24,7 +24,7 @@ pub enum Commands {
     New {
         // Path where the project will be created.
         #[arg(required = true)]
-        path: PathBuf
+        path: PathBuf,
     },
     /// Compile a project.
     ///

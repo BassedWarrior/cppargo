@@ -139,6 +139,11 @@ manifest file akin to a `Cargo.toml` file used by `cargo`. Internally,
 `cppargo` looks for such a file to determine the project root, or determine
 that it is not within a `cppargo` project.
 
+Additionally, `cppargo` will attempt to initialize the created directory as a
+`git` repo. However it is not needed for it to be a git repo in order to
+create the project successfully. In the event that it cannot find `git` as an
+excecutable, it will simply issue a warning and continue.
+
 And finally, `cppargo` will create a `src` directory with a basic
 `src/main.cpp` "Hello World!" C++ program. This is the directory where all of
 the source files for the project should be included.

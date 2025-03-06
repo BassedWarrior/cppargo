@@ -8,6 +8,14 @@ fn ensure_project_created_successfully<T>(project_root: T)
 where
     T: PathChild + PathAssert + Deref<Target = Path>,
 {
+    ensure_project_structure_created_successfully(&project_root);
+    ensure_vcs_initialized_properly(&project_root);
+}
+
+fn ensure_project_structure_created_successfully<T>(project_root: &T)
+where
+    T: PathChild + PathAssert + Deref<Target = Path>,
+{
     project_root.assert(predicates::path::is_dir());
     let project_manifest = project_root.child("Cppargo.toml");
     project_manifest.assert(format!(
@@ -19,6 +27,14 @@ where
     let main_file = project_src.child("main.cpp");
     main_file.assert(predicates::path::is_file());
     main_file.assert(HELLO_WORLD_PROGRAM);
+}
+
+fn ensure_vcs_initialized_properly<T>(project_root: &T)
+where
+    T: PathChild + PathAssert + Deref<Target = Path>,
+{
+    let project_git_dir = project_root.child(".git");
+    project_git_dir.assert(predicate::path::is_dir());
 }
 
 fn success_predicate(project_path: &Path) -> EndsWithPredicate {
@@ -33,6 +49,26 @@ fn fail_predicate(project_path: &Path) -> ContainsPredicate {
         "Failed to create project {}\n",
         project_path.display()
     ))
+}
+
+#[test]
+fn succeed_without_vcs() -> anyhow::Result<()> {
+    let tmp_dir = assert_fs::TempDir::new()?;
+    let project_root = tmp_dir.child("foo");
+    let project_path = project_root.path();
+
+    let mut cmd = Command::cargo_bin("cppargo")?;
+    cmd.env("PATH", "").arg("new").arg(project_path);
+    cmd.assert()
+        .success()
+        .stdout(success_predicate(project_path))
+        .stderr(predicate::str::contains(
+            "[WARN] Couldn't initialize project as git repo. Ensure it is installed",
+        ));
+
+    ensure_project_structure_created_successfully(&project_root);
+
+    Ok(())
 }
 
 #[test]

@@ -19,6 +19,10 @@ pub enum Commands {
     /// project name, a `<PATH>/src` directory for source `.cpp` files, and a
     /// `<PATH>/src/main.cpp` sample "Hello World!" file.
     ///
+    /// It will also attempt to initialize the created `<PATH>` directory as a
+    /// `git` repo. If it fails to do so because `git` is not found, it will
+    /// simply issue a warning and continue.
+    ///
     /// This command fails if `<PATH>` already exists.
     #[command(visible_alias = "n")]
     New {

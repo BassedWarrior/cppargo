@@ -25,8 +25,10 @@ pub fn main(current_dir: &Path) -> anyhow::Result<()> {
         )
     })?;
 
-    let project_manifest = project_root.join("Cppargo.toml");
-    let project_name = get_project_name(&project_manifest)?;
+    let project_manifest = get_project_manifest(&project_root)
+        .with_context(|| "Failed to parse project manifest!")?;
+    let project_name = get_project_name(&project_manifest)
+        .with_context(|| "Failed to parse project name!")?;
 
     let project_target = project_root.join("target");
     ensure_target_dir_exists(&project_target)
@@ -92,15 +94,22 @@ fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
     Ok(src_files)
 }
 
-fn get_project_name(project_manifest: &Path) -> anyhow::Result<String> {
-    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(project_manifest)?)
+fn get_project_manifest(project_root: &Path) -> anyhow::Result<toml_edit::DocumentMut> {
+    let manifest_path = project_root.join("Cppargo.toml");
+
+    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(&manifest_path)?)
         .with_context(|| {
             format!(
                 "Failed to parse project manifest {}!",
-                project_manifest.display()
+                manifest_path.display()
             )
         })?;
-    let Some(project_name) = manifest["project"]["name"].as_str() else {
+
+    Ok(manifest)
+}
+
+fn get_project_name(project_manifest: &toml_edit::DocumentMut) -> anyhow::Result<String> {
+    let Some(project_name) = project_manifest["project"]["name"].as_str() else {
         anyhow::bail!("Failed to gather project name!")
     };
 

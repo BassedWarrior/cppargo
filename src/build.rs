@@ -16,6 +16,11 @@ pub fn main(current_dir: &Path) -> anyhow::Result<()> {
         )
     })?;
 
+    let project_manifest = get_project_manifest(&project_root)
+        .with_context(|| "Failed to parse project manifest!")?;
+    let project_name = get_project_name(&project_manifest)
+        .with_context(|| "Failed to parse project name!")?;
+
     let project_src = project_root.join("src");
 
     let src_files = find_src_files(&project_src).with_context(|| {
@@ -24,11 +29,6 @@ pub fn main(current_dir: &Path) -> anyhow::Result<()> {
             project_src.display()
         )
     })?;
-
-    let project_manifest = get_project_manifest(&project_root)
-        .with_context(|| "Failed to parse project manifest!")?;
-    let project_name = get_project_name(&project_manifest)
-        .with_context(|| "Failed to parse project name!")?;
 
     let project_target = project_root.join("target");
     ensure_target_dir_exists(&project_target)

@@ -69,6 +69,28 @@ fn find_project_root(dir: &Path) -> anyhow::Result<PathBuf> {
     Ok(project_root)
 }
 
+fn get_project_manifest(project_root: &Path) -> anyhow::Result<toml_edit::DocumentMut> {
+    let manifest_path = project_root.join("Cppargo.toml");
+
+    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(&manifest_path)?)
+        .with_context(|| {
+            format!(
+                "Failed to parse project manifest {}!",
+                manifest_path.display()
+            )
+        })?;
+
+    Ok(manifest)
+}
+
+fn get_project_name(project_manifest: &toml_edit::DocumentMut) -> anyhow::Result<String> {
+    let Some(project_name) = project_manifest["project"]["name"].as_str() else {
+        anyhow::bail!("Failed to gather project name!")
+    };
+
+    Ok(String::from_str(project_name)?)
+}
+
 fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
     let src_files: HashSet<PathBuf> = fs::read_dir(project_src)
         .with_context(|| format!("Couldn't read source directory {}.", &project_src.display()))?
@@ -92,28 +114,6 @@ fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {
     );
 
     Ok(src_files)
-}
-
-fn get_project_manifest(project_root: &Path) -> anyhow::Result<toml_edit::DocumentMut> {
-    let manifest_path = project_root.join("Cppargo.toml");
-
-    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(&manifest_path)?)
-        .with_context(|| {
-            format!(
-                "Failed to parse project manifest {}!",
-                manifest_path.display()
-            )
-        })?;
-
-    Ok(manifest)
-}
-
-fn get_project_name(project_manifest: &toml_edit::DocumentMut) -> anyhow::Result<String> {
-    let Some(project_name) = project_manifest["project"]["name"].as_str() else {
-        anyhow::bail!("Failed to gather project name!")
-    };
-
-    Ok(String::from_str(project_name)?)
 }
 
 fn ensure_target_dir_exists(project_target: &Path) -> anyhow::Result<()> {
@@ -236,6 +236,55 @@ mod tests {
             }
 
             Ok(())
+        }
+    }
+
+    #[cfg(test)]
+    mod get_project_name {
+        use super::*;
+
+        #[test]
+        fn succeed() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_manifest = tmp_dir.child("Cppargo.toml");
+            project_manifest.write_str(PROJECT_MANIFEST)?;
+
+            let project_name = get_project_name(project_manifest.path())?;
+
+            anyhow::ensure!(
+                project_name == "foo",
+                format!(
+                    "Got wrong project name!\nExpected: foo\nGot: {}\n",
+                    project_name
+                )
+            );
+
+            Ok(())
+        }
+
+        #[test]
+        fn no_name_in_manifest() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_manifest = tmp_dir.child("Cppargo.toml");
+            project_manifest.write_str(PROJEJCT_MANIFEST_WITH_NO_NAME)?;
+
+            match get_project_name(project_manifest.path()) {
+                Err(err) => {
+                    if err.to_string()
+                        == format!(
+                            "Failed to parse project manifest {}!",
+                            project_manifest.path().display()
+                        )
+                    {
+                        return Ok(());
+                    }
+
+                    anyhow::bail!(err);
+                }
+                Ok(name) => {
+                    anyhow::bail!(format!("Found unexpected name {name}!"));
+                }
+            }
         }
     }
 
@@ -385,55 +434,6 @@ mod tests {
             ensure_found_expected_files(&found_src_files, &expected_src_files)?;
 
             Ok(())
-        }
-    }
-
-    #[cfg(test)]
-    mod get_project_name {
-        use super::*;
-
-        #[test]
-        fn succeed() -> anyhow::Result<()> {
-            let tmp_dir = assert_fs::TempDir::new()?;
-            let project_manifest = tmp_dir.child("Cppargo.toml");
-            project_manifest.write_str(PROJECT_MANIFEST)?;
-
-            let project_name = get_project_name(project_manifest.path())?;
-
-            anyhow::ensure!(
-                project_name == "foo",
-                format!(
-                    "Got wrong project name!\nExpected: foo\nGot: {}\n",
-                    project_name
-                )
-            );
-
-            Ok(())
-        }
-
-        #[test]
-        fn no_name_in_manifest() -> anyhow::Result<()> {
-            let tmp_dir = assert_fs::TempDir::new()?;
-            let project_manifest = tmp_dir.child("Cppargo.toml");
-            project_manifest.write_str(PROJEJCT_MANIFEST_WITH_NO_NAME)?;
-
-            match get_project_name(project_manifest.path()) {
-                Err(err) => {
-                    if err.to_string()
-                        == format!(
-                            "Failed to parse project manifest {}!",
-                            project_manifest.path().display()
-                        )
-                    {
-                        return Ok(());
-                    }
-
-                    anyhow::bail!(err);
-                }
-                Ok(name) => {
-                    anyhow::bail!(format!("Found unexpected name {name}!"));
-                }
-            }
         }
     }
 

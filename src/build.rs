@@ -91,11 +91,36 @@ fn get_project_manifest(project_root: &Path) -> anyhow::Result<toml_edit::Docume
 }
 
 fn get_project_name(project_manifest: &toml_edit::DocumentMut) -> anyhow::Result<String> {
-    let Some(project_name) = project_manifest["project"]["name"].as_str() else {
-        anyhow::bail!("Failed to gather project name!")
+    let Some(project_item) = project_manifest.get("project") else {
+        anyhow::bail!("Missing '[project]' table in manifest!")
+    };
+    let toml_edit::Item::Table(project_table) = project_item else {
+        anyhow::bail!("Found 'project' key is not a table! (Should be '[project]')")
     };
 
-    Ok(String::from_str(project_name)?)
+    let Some(project_name_item) = project_table.get("name") else {
+        anyhow::bail!("Missing 'name' key in '[project]' table in manifest!")
+    };
+
+    let toml_edit::Item::Value(project_name_value) = project_name_item else {
+        anyhow::bail!("Found 'name' key in '[project]' table is not a value! \
+                      (Should be 'name = \"YourMagicProjectName\"')"
+        )
+    };
+
+    let toml_edit::Value::String(project_name_formatted) = project_name_value else {
+        anyhow::bail!("Value for 'name' key in '[project]' table is not a string! \
+                      (Should be 'name = \"YourMagicProjectName\"')"
+        )
+    };
+
+    if project_name_formatted.clone().into_value().is_empty() {
+        anyhow::bail!("Missing value for 'name' key in '[project]' table! \
+                      (Should be 'name = \"YourMagicProjectName\"')"
+        )
+    }
+
+    Ok(project_name_formatted.clone().into_value())
 }
 
 fn find_src_files(project_src: &Path) -> anyhow::Result<HashSet<PathBuf>> {

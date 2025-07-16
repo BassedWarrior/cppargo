@@ -72,13 +72,20 @@ fn find_project_root(dir: &Path) -> anyhow::Result<PathBuf> {
 fn get_project_manifest(project_root: &Path) -> anyhow::Result<toml_edit::DocumentMut> {
     let manifest_path = project_root.join("Cppargo.toml");
 
-    let manifest = toml_edit::DocumentMut::from_str(&fs::read_to_string(&manifest_path)?)
-        .with_context(|| {
+    let manifest = toml_edit::DocumentMut::from_str(
+        &fs::read_to_string(&manifest_path).with_context(|| {
             format!(
-                "Failed to parse project manifest {}!",
+                "Failed to read project manifest {} file!",
                 manifest_path.display()
             )
-        })?;
+        })?,
+    )
+    .with_context(|| {
+        format!(
+            "Failed to parse project manifest {} file!",
+            manifest_path.display()
+        )
+    })?;
 
     Ok(manifest)
 }

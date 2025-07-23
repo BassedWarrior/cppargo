@@ -272,51 +272,196 @@ mod tests {
     }
 
     #[cfg(test)]
-    mod get_project_name {
+    mod get_project_manifest {
         use super::*;
 
         #[test]
         fn succeed() -> anyhow::Result<()> {
             let tmp_dir = assert_fs::TempDir::new()?;
-            let project_manifest = tmp_dir.child("Cppargo.toml");
-            project_manifest.write_str(PROJECT_MANIFEST)?;
+            let project_manifest_file = tmp_dir.child("Cppargo.toml");
+            project_manifest_file.write_str(PROJECT_MANIFEST)?;
 
-            let project_name = get_project_name(project_manifest.path())?;
+            get_project_manifest(tmp_dir.path())
+                .with_context(|| "Failed to parse proper manifest!")?;
+
+            Ok(())
+        }
+
+        #[test]
+        fn missing_manifest() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+
+            match get_project_manifest(tmp_dir.path()) {
+                Err(err) => {
+                    if err.to_string()
+                        == format!(
+                            "Failed to read project manifest {} file!",
+                            tmp_dir.child("Cppargo.toml").path().display()
+                        )
+                    {
+                        return Ok(());
+                    }
+
+                    anyhow::bail!(format!(
+                        "Found unexpected error: {}\nExpected: Failed to read project manifest {} file!",
+                        err,
+                        tmp_dir.child("Cppargo.toml").path().display()
+                    ));
+                }
+                Ok(_) => {
+                    anyhow::bail!("Shouldn't have parsed non-existent manifest!");
+                }
+            }
+        }
+
+        #[test]
+        fn bad_syntax_in_manifest() -> anyhow::Result<()> {
+            let tmp_dir = assert_fs::TempDir::new()?;
+            let project_manifest_file = tmp_dir.child("Cppargo.toml");
+            project_manifest_file.write_str(PROJEJCT_MANIFEST_WITH_NO_NAME)?;
+
+            match get_project_manifest(tmp_dir.path()) {
+                Err(err) => {
+                    if err.to_string()
+                        == format!(
+                            "Failed to parse project manifest {} file!",
+                            tmp_dir.child("Cppargo.toml").path().display()
+                        )
+                    {
+                        return Ok(());
+                    }
+
+                    anyhow::bail!(format!(
+                        "Found unexpected error: {}\nExpected: Failed to parse project manifest {} file!",
+                        err,
+                        tmp_dir.child("Cppargo.toml").path().display()
+                    ));
+                }
+                Ok(_) => {
+                    anyhow::bail!("Shouldn't have parsed manifest with bad syntax!");
+                }
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod get_project_name {
+        use super::*;
+
+        #[test]
+        fn succeed() -> anyhow::Result<()> {
+            const TEST_PROJECT_NAME: &str = "foo";
+            let mut project_manifest = toml_edit::DocumentMut::new();
+            project_manifest["project"] = toml_edit::table();
+            project_manifest["project"]["name"] = toml_edit::value(TEST_PROJECT_NAME);
+
+            let project_name = get_project_name(&project_manifest)?;
 
             anyhow::ensure!(
-                project_name == "foo",
+                project_name == TEST_PROJECT_NAME,
                 format!(
-                    "Got wrong project name!\nExpected: foo\nGot: {}\n",
-                    project_name
+                    "Got wrong project name!\n\
+                    Expected: {}\n\
+                    Got: {}\n",
+                    TEST_PROJECT_NAME, project_name
                 )
             );
 
             Ok(())
         }
 
-        #[test]
-        fn no_name_in_manifest() -> anyhow::Result<()> {
-            let tmp_dir = assert_fs::TempDir::new()?;
-            let project_manifest = tmp_dir.child("Cppargo.toml");
-            project_manifest.write_str(PROJEJCT_MANIFEST_WITH_NO_NAME)?;
-
-            match get_project_name(project_manifest.path()) {
-                Err(err) => {
-                    if err.to_string()
-                        == format!(
-                            "Failed to parse project manifest {}!",
-                            project_manifest.path().display()
-                        )
-                    {
-                        return Ok(());
-                    }
-
-                    anyhow::bail!(err);
-                }
+        fn test_fail(
+            project_manifest: &toml_edit::DocumentMut,
+            expected_error: &str,
+        ) -> anyhow::Result<()> {
+            let anyhow_err = match get_project_name(project_manifest) {
                 Ok(name) => {
-                    anyhow::bail!(format!("Found unexpected name {name}!"));
+                    anyhow::bail!(format!(
+                        "Succeded when it should have failed!\n\
+                         Got name: {}",
+                        name
+                    ))
                 }
+                Err(err) => err,
+            };
+
+            if anyhow_err.to_string() == expected_error {
+                return Ok(());
             }
+
+            anyhow::bail!(format!(
+                "Got wrong type of error!\n\
+                     Expected: {}\n\
+                     Got: {}",
+                expected_error,
+                anyhow_err
+            ));
+        }
+
+        #[test]
+        fn no_project_table_in_manifest() -> anyhow::Result<()> {
+            const EXPECTED_ERROR: &str = "Missing '[project]' table in manifest!";
+
+            let project_manifest = toml_edit::DocumentMut::new();
+
+            test_fail(&project_manifest, EXPECTED_ERROR)
+        }
+
+        #[test]
+        fn project_key_is_not_list() -> anyhow::Result<()> {
+            const EXPECTED_ERROR: &str = "Found 'project' key is not a table! \
+                                          (Should be '[project]')";
+
+            let mut project_manifest = toml_edit::DocumentMut::new();
+            project_manifest["project"] = toml_edit::value("");
+
+            test_fail(&project_manifest, EXPECTED_ERROR)
+        }
+
+        #[test]
+        fn no_name_key_in_manifest() -> anyhow::Result<()> {
+            const EXPECTED_ERROR: &str = "Missing 'name' key in '[project]' table in manifest!";
+
+            let mut project_manifest = toml_edit::DocumentMut::new();
+            project_manifest["project"] = toml_edit::table();
+
+            test_fail(&project_manifest, EXPECTED_ERROR)
+        }
+
+        #[test]
+        fn name_key_is_not_value() -> anyhow::Result<()> {
+            const EXPECTED_ERROR: &str = "Found 'name' key in '[project]' table is not a value! \
+                                          (Should be 'name = \"YourMagicProjectName\"')";
+
+            let mut project_manifest = toml_edit::DocumentMut::new();
+            project_manifest["project"] = toml_edit::table();
+            project_manifest["project"]["name"] = toml_edit::table();
+
+            test_fail(&project_manifest, EXPECTED_ERROR)
+        }
+
+        #[test]
+        fn name_value_is_not_a_string() -> anyhow::Result<()> {
+            const EXPECTED_ERROR: &str = "Value for 'name' key in '[project]' table is not a string! \
+                                          (Should be 'name = \"YourMagicProjectName\"')";
+
+            let mut project_manifest = toml_edit::DocumentMut::new();
+            project_manifest["project"] = toml_edit::table();
+            project_manifest["project"]["name"] = toml_edit::value(0);
+
+            test_fail(&project_manifest, EXPECTED_ERROR)
+        }
+
+        #[test]
+        fn name_value_is_empty() -> anyhow::Result<()> {
+            const EXPECTED_ERROR: &str = "Missing value for 'name' key in '[project]' table! \
+                                          (Should be 'name = \"YourMagicProjectName\"')";
+
+            let mut project_manifest = toml_edit::DocumentMut::new();
+            project_manifest["project"] = toml_edit::table();
+            project_manifest["project"]["name"] = toml_edit::value("");
+
+            test_fail(&project_manifest, EXPECTED_ERROR)
         }
     }
 

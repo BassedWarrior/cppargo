@@ -23,6 +23,14 @@ pub fn main(current_dir: &Path) -> anyhow::Result<()> {
 
     let project_src = project_root.join("src");
 
+    anyhow::ensure!(
+        project_src.join("main.cpp").is_file(),
+        format!(
+            "Missing \"src/main.cpp\" file in {}!",
+            project_src.display()
+        )
+    );
+
     let src_files = find_src_files(&project_src).with_context(|| {
         format!(
             "Failed to gather source files from {}!",

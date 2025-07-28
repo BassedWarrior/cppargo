@@ -15,7 +15,7 @@ fn fail_outside_cppargo_project() -> anyhow::Result<()> {
 }
 
 #[test]
-fn fail_because_project_has_no_src_files() -> anyhow::Result<()> {
+fn fail_because_project_has_main_file() -> anyhow::Result<()> {
     let tmp_dir = assert_fs::TempDir::new()?;
 
     let project_root = tmp_dir.child("foo");
@@ -29,7 +29,10 @@ fn fail_because_project_has_no_src_files() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("cppargo")?;
     cmd.current_dir(project_root.path()).arg("build");
     cmd.assert().failure().stderr(predicate::str::contains(
-        "No source `.cpp` files to compile found",
+        format!(
+            "Missing \"src/main.cpp\" file in {}!",
+            project_src.display()
+        )
     ));
 
     Ok(())

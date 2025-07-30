@@ -163,13 +163,18 @@ exits with an error due to not being inside a `cppargo` project, as the
 `Cppargo.toml` determines the root of any `cppargo` project.
 
 From the project root, it will look for the `PROJECT_ROOT/src` directory to
-find all of the `.cpp` files insde it. The file structure inside the `src`
-directory is irrelevant to `cppargo`, since it will search exhaustively all
-subdirectories to find all `.cpp` files.
+find all of the `.cpp` files insde it. The first file it looks for, is the
+`src/main.cpp` file. This file is meant to be the main project file, and is
+therefore required to be in the project. If `cppargo` fails to find a
+`src/main.cpp` file, it will exit with an error. This to establish a convention
+for file structure within any `cppargo` project.
 
-Once gathered, all of the `.cpp` files are sent as arguments to `g++`
-to be compiled. This means that `cppargo` does no linkage or compilation of its
-own, nor does it check for any bad `#include` statements, or the lack thereof.
+Apart from the presence of the `src/main.cpp` file, the file structure inside
+the `src` directory is irrelevant to `cppargo`, since it will search
+exhaustively all subdirectories to find all `.cpp` files. Once gathered, all of
+the `.cpp` files are sent as arguments to `g++` to be compiled. This means that
+`cppargo` does no linkage or compilation of its own, nor does it check for any
+bad `#include` statements, or the lack thereof.
 
 The compiled excecutable file is then stored within a `PROJECT_ROOT/target`
 directory. `cppargo` first checks to ensure that the directory exists, and
